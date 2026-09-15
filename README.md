@@ -9,7 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@mencoro/mcp"><img src="https://img.shields.io/npm/v/%40mencoro%2Fmcp?label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@mencoro/mcp"><img src="https://img.shields.io/npm/v/%40mencoro%2Fmcp?logo=npm&logoColor=white&label=npm&color=cb3837" alt="npm version"></a>
+  <a href="https://registry.modelcontextprotocol.io/?search=com.mencoro%2Fmencoro"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.modelcontextprotocol.io%2Fv0%2Fservers%2Fcom.mencoro%252Fmencoro%2Fversions%2Flatest&query=%24.server.version&prefix=v&logo=modelcontextprotocol&logoColor=white&label=MCP%20registry&color=0b7285" alt="MCP registry"></a>
+  <a href="https://github.com/mencoro/mencoro-mcp/pkgs/container/mencoro-mcp"><img src="https://img.shields.io/badge/ghcr.io-mencoro%2Fmencoro--mcp-2496ed?logo=docker&logoColor=white" alt="GitHub Container Registry"></a>
   <a href="https://github.com/mencoro/mencoro-mcp/actions/workflows/ci.yml"><img src="https://github.com/mencoro/mencoro-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT licence"></a>
 </p>
