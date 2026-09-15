@@ -77,3 +77,17 @@ jobs:
       - run: docker build -t mencoro-mcp:ci .
       - name: Smoke-test the image
         run: docker run --rm -i mencoro-mcp:ci --version
+
+  # One stable check for branch protection to require. Requiring the matrix jobs
+  # by name means renaming or dropping a Node version silently blocks every pull
+  # request on a check that will never report again.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [test, runtime-floor, manifests, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job did not succeed
+        run: |
+          echo '${{ toJSON(needs) }}' | jq -e 'all(.[]; .result == "success")' > /dev/null \
+            || { echo "::error::one or more CI jobs did not succeed"; exit 1; }
