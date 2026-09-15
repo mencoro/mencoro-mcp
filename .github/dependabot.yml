@@ -1,17 +1,86 @@
 version: 2
+multi-ecosystem-groups:
+  repository-dependencies:
+    schedule:
+      interval: weekly
+      day: monday
+      time: 09:00
+      timezone: Europe/Madrid
+    commit-message:
+      prefix: chore(deps)
 updates:
   - package-ecosystem: npm
     directory: /
-    schedule:
-      interval: weekly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 7
+      semver-patch-days: 3
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     groups:
-      mcp-sdk:
-        patterns: ['@modelcontextprotocol/*']
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: weekly
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+          - minor
+    patterns:
+      - "*"
+    multi-ecosystem-group: repository-dependencies
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
   - package-ecosystem: docker
     directory: /
-    schedule:
-      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+          - minor
+    patterns:
+      - "*"
+    multi-ecosystem-group: repository-dependencies
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
+  - package-ecosystem: github-actions
+    directory: /
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+          - minor
+    patterns:
+      - "*"
+    multi-ecosystem-group: repository-dependencies
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
