@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  MCP_PUBLISHER_VERSION: '1.8.1'
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Type stripping runs the TypeScript sources directly, which needs 22.18+.
+        node: ['22.18', '24', 'lts/*']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  runtime-floor:
+    # The package claims Node >= 20.19. Nothing above proves that, because the
+    # test runner needs a newer Node than the published artifact does.
+    name: Built artifact on the minimum supported Node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20.19'
+      - run: node dist/cli.js --version
+      - run: node dist/cli.js --help
+
+  manifests:
+    name: Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 'lts/*'
+      - run: node scripts/check-manifests.mjs
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}"
+          ARCHIVE="mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
+          curl -fsSL -o "$ARCHIVE" "$BASE/$ARCHIVE"
+          curl -fsSL -o checksums.txt "$BASE/registry_${MCP_PUBLISHER_VERSION}_checksums.txt"
+          grep " $ARCHIVE\$" checksums.txt | sha256sum -c -
+          tar xzf "$ARCHIVE" mcp-publisher
+      - run: ./mcp-publisher validate
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t mencoro-mcp:ci .
+      - name: Smoke-test the image
+        run: docker run --rm -i mencoro-mcp:ci --version

@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  # Pinned, not `latest`: this binary is handed the registry signing key, so what
+  # executes must not change under us between two runs of the same tag.
+  MCP_PUBLISHER_VERSION: '1.8.1'
+
+jobs:
+  version:
+    name: Resolve the version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 'lts/*'
+      - id: resolve
+        name: Refuse a tag that disagrees with the manifests
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION" >&2
+            exit 1
+          fi
+          node scripts/check-manifests.mjs
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  npm:
+    name: Publish to npm
+    needs: [version]
+    runs-on: ubuntu-latest
+    # Gated deliberately: a tag can point at any commit, including one that edits
+    # this workflow, so tag-push rights would otherwise equal npm-token rights.
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 'lts/*'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  ghcr:
+    name: Publish the image to GHCR
+    needs: [version]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          # The bare version tag is the one server.json advertises and the one the
+          # MCP registry pulls to read the ownership annotation. Publishing only
+          # the v-prefixed tag would fail the registry step below, after npm has
+          # already burned this version.
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ needs.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
+          annotations: |
+            index:io.modelcontextprotocol.server.name=com.mencoro/mencoro
+            manifest:io.modelcontextprotocol.server.name=com.mencoro/mencoro
+
+  registry:
+    name: Publish to the MCP registry
+    # The registry fetches the npm and OCI artifacts to verify ownership, so both
+    # must already exist when it runs.
+    needs: [npm, ghcr]
+    runs-on: ubuntu-latest
+    environment: mcp-registry
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}"
+          ARCHIVE="mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
+          curl -fsSL -o "$ARCHIVE" "$BASE/$ARCHIVE"
+          curl -fsSL -o checksums.txt "$BASE/registry_${MCP_PUBLISHER_VERSION}_checksums.txt"
+          grep " $ARCHIVE\$" checksums.txt | sha256sum -c -
+          tar xzf "$ARCHIVE" mcp-publisher
+      - run: ./mcp-publisher validate
+      - name: Authenticate
+        # Through the environment, not the command line: an argv-borne key is
+        # readable from /proc by anything else running in the job.
+        env:
+          MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+        run: ./mcp-publisher login dns --domain mencoro.com --private-key "$MCP_REGISTRY_PRIVATE_KEY"
+      - run: ./mcp-publisher publish

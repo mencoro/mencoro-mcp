@@ -1,0 +1,79 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.mencoro/mencoro",
+  "title": "Mencoro",
+  "description": "Track how your brand appears in AI answers: rank, mentions, sentiment, share of voice.",
+  "version": "1.0.0",
+  "websiteUrl": "https://mencoro.com/features/mcp-server/",
+  "repository": {
+    "url": "https://github.com/mencoro/mencoro-mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/mencoro/mencoro-mcp/main/assets/mencoro-icon-256.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "256x256"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.mencoro.com/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <Mencoro personal access token>. Omit it to sign in with OAuth 2.1 instead.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@mencoro/mcp",
+      "version": "1.0.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MENCORO_API_KEY",
+          "description": "Mencoro personal access token (mcp_pat_...), created at https://tool.mencoro.com/me/mcp-server",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "MENCORO_MCP_URL",
+          "description": "Upstream MCP endpoint. Only set this to reach a non-production Mencoro environment.",
+          "default": "https://api.mencoro.com/mcp",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    },
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/mencoro/mencoro-mcp:1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MENCORO_API_KEY",
+          "description": "Mencoro personal access token (mcp_pat_...), created at https://tool.mencoro.com/me/mcp-server",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
