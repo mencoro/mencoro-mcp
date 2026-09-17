@@ -321,6 +321,8 @@ in that order.
 * Bugs in this package — [open an issue](https://github.com/mencoro/mencoro-mcp/issues)
 * Security — see [SECURITY.md](SECURITY.md)
 * About the server — [mencoro.com/features/mcp-server](https://mencoro.com/features/mcp-server/)
+* Privacy policy — [mencoro.com/legal/#privacy](https://mencoro.com/legal/#privacy)
+* Terms of service — [mencoro.com/legal/#terms](https://mencoro.com/legal/#terms)
 
 ## Licence
 
