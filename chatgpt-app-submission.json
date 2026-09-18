@@ -1,0 +1,284 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Mencoro",
+    "subtitle": "Brand visibility analytics",
+    "description": "Mencoro helps you analyze your brand visibility in AI answers and search results using monitoring data already stored in your account. Explore accessible projects, compare share of voice and tracked competitors, inspect sentiment and mention examples, review cited sources, and track changes over time. The connector provides read-only analytics and does not create monitoring queries, run new checks, or change project settings.",
+    "category": "BUSINESS"
+  },
+  "tools": {
+    "get_available_filters": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves configured engines, countries, keyword clusters, and competitors for an authorized project without changing its configuration or monitoring data.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete competitors or keyword clusters, remove configured engines or countries, or overwrite project settings."
+      }
+    },
+    "get_cited_sources": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Aggregates domains and pages already cited in stored AI responses without downloading those pages, generating new responses, or changing citation records.",
+        "open_world_justification": "Reads citation URLs already stored in the authorized project as data and never visits, crawls, or fetches the referenced websites.",
+        "destructive_justification": "Does not delete citation records, overwrite stored responses, or modify content on the referenced websites."
+      }
+    },
+    "get_cluster_breakdown": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Aggregates stored rank-tracking metrics by existing keyword cluster without creating clusters, reassigning queries, or modifying monitoring results.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete clusters, remove queries from clusters, overwrite metrics, or change project configuration."
+      }
+    },
+    "get_competitor_cooccurrence": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Calculates shared-answer counts, relative mention positions, and win rates from stored brand and competitor mentions without modifying results or running new checks.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete competitor records, overwrite mention positions, or modify stored AI responses."
+      }
+    },
+    "get_mention_mix": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Groups previously stored brand mentions by type, tone, and qualifier without editing mentions, changing classifications, or collecting new responses.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete mention records, overwrite their types or qualifiers, or change stored analysis."
+      }
+    },
+    "get_mention_samples": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves a filtered and paginated sample of stored AI mention texts and their existing labels without modifying those texts or triggering new AI requests.",
+        "open_world_justification": "Reads previously captured mention texts within the authorized project and does not send prompts to AI providers or retrieve new content from external websites.",
+        "destructive_justification": "Does not delete or overwrite mention texts, change sentiment labels, or alter stored responses."
+      }
+    },
+    "get_metric_glossary": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns static metric definitions, synonyms, units, and tool references after checking organization access without modifying account or project data.",
+        "open_world_justification": "Returns a fixed Mencoro metric reference after checking organization access and does not search the internet or contact external services.",
+        "destructive_justification": "Does not edit or remove metric definitions, project data, account settings, or access permissions."
+      }
+    },
+    "get_organization_overview": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Summarizes existing latest-snapshot metrics across active projects in an authorized organization without modifying projects, metrics, or organization settings.",
+        "open_world_justification": "Reads only active-project snapshots within the authorized Mencoro organization and does not query external AI engines or public internet resources.",
+        "destructive_justification": "Does not delete or modify projects, overwrite their metrics, revoke memberships, or change organization settings."
+      }
+    },
+    "get_project_rank_tracking_stats": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a project summary of positions, share of voice, sentiment, and trends from stored monitoring data without changing results or starting monitoring jobs.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete or overwrite monitoring results, modify tracked queries, or change project configuration."
+      }
+    },
+    "get_query_movers": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Compares stored metrics across consecutive date windows to rank tracked-query gains and losses without changing queries, rankings, or monitoring schedules.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete tracked queries, overwrite historical metrics, or modify monitoring configuration."
+      }
+    },
+    "get_rank_tracking_time_series": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes daily, weekly, or monthly project metric series from stored rank data, optionally including competitors, without updating records or running new checks.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete historical data, overwrite metric values, or alter project and competitor configurations."
+      }
+    },
+    "get_sentiment_breakdown": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Aggregates existing positive, neutral, and negative mention counts by engine and competitor without reclassifying mentions or changing stored labels.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete mentions, overwrite sentiment labels, or alter any underlying monitoring results."
+      }
+    },
+    "get_share_of_voice_formula": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the existing share-of-voice weighting constants after checking project access without changing the formula or recalculating persisted results.",
+        "open_world_justification": "Returns Mencoro formula constants within an authorized project context and does not access public internet resources or third-party systems.",
+        "destructive_justification": "Does not overwrite weighting constants, delete monitoring results, or alter project scores."
+      }
+    },
+    "get_tracked_query_time_series": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a time series for an existing tracked query from stored project data without changing the query, its engine or country, or its monitoring schedule.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete the tracked query or its history, overwrite measurements, or change its monitoring settings."
+      }
+    },
+    "get_tracking_coverage": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads existing query statuses and check timestamps to report active, paused, never-checked, and overdue queries without scheduling, resuming, or executing checks.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete queries, change their active or paused status, alter schedules, or cancel monitoring jobs."
+      }
+    },
+    "list_projects": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists existing active organizations and projects the authenticated user can access without creating projects or changing memberships or permissions.",
+        "open_world_justification": "Operates only on organizations and projects available to the authenticated Mencoro user and does not discover public internet resources or interact with external systems.",
+        "destructive_justification": "Does not delete projects or organizations, change memberships, revoke access, or alter account settings."
+      }
+    },
+    "search_tracked_queries": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Searches, filters, sorts, and paginates existing tracked queries and their latest stored metrics without creating, editing, pausing, resuming, or executing queries.",
+        "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
+        "destructive_justification": "Does not delete tracked queries, overwrite their configuration or metrics, or change their active or paused status."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Discover accessible projects and assess current organization health and tracking coverage.",
+      "user_prompt": "Show my Mencoro organizations and projects, summarize the latest brand visibility across the first organization, and show the available filters and any stale or never-checked queries for its first project.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_organization_overview, get_available_filters, get_tracking_coverage",
+      "expected_output": "Lists only accessible active organizations and projects, returns the latest organization snapshot, valid project filter values, and coverage counts with overdue examples; clearly reports when no accessible projects exist.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Inspect project visibility across a recent date window and compare keyword clusters.",
+      "user_prompt": "For my first accessible Mencoro project, summarize visibility and share of voice over the last 30 days, compare keyword clusters, and show the weekly trend.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_project_rank_tracking_stats, get_cluster_breakdown, get_rank_tracking_time_series",
+      "expected_output": "Returns the project summary, cluster breakdown, and weekly series using stored results for the requested window, preserving missing values and explaining when there is insufficient data.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Review sentiment, mention composition, and supporting examples.",
+      "user_prompt": "For my first accessible Mencoro project over the last 30 days, compare positive, neutral, and negative mentions, explain whether the brand is recommended or merely listed, and show up to 10 negative mention examples.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_sentiment_breakdown, get_mention_mix, get_mention_samples",
+      "expected_output": "Returns sentiment aggregates, mention type/tone/qualifier counts, and at most 10 stored negative mention texts; if none exist, reports that clearly without inventing examples or running new checks.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Compare tracked competitors and inspect the sources cited in existing AI answers.",
+      "user_prompt": "For my first accessible Mencoro project over the last 30 days, which tracked competitors outrank my brand when we appear in the same AI answer, and which websites are cited most often?",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_available_filters, get_competitor_cooccurrence, get_cited_sources",
+      "expected_output": "Returns head-to-head statistics for configured competitors and citation-domain aggregates from stored answers, keeping those two analyses distinct and never browsing the cited websites.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Find tracked queries, inspect recent movers, and explain their share-of-voice history.",
+      "user_prompt": "For my first accessible Mencoro project, show the top 10 tracked queries by share of voice, the biggest gains and losses over the last 30 days, and the weekly history of the top query; explain what share of voice means and how its weights work.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, search_tracked_queries, get_query_movers, get_tracked_query_time_series, get_metric_glossary, get_share_of_voice_formula",
+      "expected_output": "Returns at most 10 existing queries, gains and losses using the supported sort directions, the selected query history, and the metric definition and formula constants; handles an empty project without inventing a query.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not invoke read-only analytics tools for requests to change monitoring configuration.",
+      "user_prompt": "Pause all my Mencoro tracked queries and delete every competitor from my project; do not retrieve any analytics.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Does not invoke Mencoro tools or claim to make changes and explains that this connector supports reading analytics rather than changing monitoring configuration.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke stored analytics tools for live research about an untracked brand.",
+      "user_prompt": "Search the public web right now for reviews of a brand I have never tracked in Mencoro; do not use my stored project data.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Does not invoke Mencoro tools because they cannot perform live web research or collect new monitoring results.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke brand-monitoring tools for unrelated calendar tasks.",
+      "user_prompt": "Schedule a meeting with my team tomorrow morning and email everyone an invitation.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Does not invoke Mencoro tools because calendar scheduling and sending email are outside this connector's capabilities.",
+      "expected_output_url": null
+    }
+  ]
+}

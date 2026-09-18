@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Coverage Audit"
+  short_description: "Identify stale and unmonitored tracked queries"
+  default_prompt: "Use $mencoro-coverage-audit to review tracking coverage and data freshness for my Mencoro project."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Read-only Mencoro brand-monitoring analytics"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"

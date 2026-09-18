@@ -239,6 +239,28 @@ Twelve ready-made questions, surfaced by clients that support MCP prompts:
 `biggest_movers` · `query_history` · `competitor_standing` · `head_to_head` ·
 `negative_mentions` · `cited_sources` · `coverage_health` · `sov_explainer`
 
+## ChatGPT submission and skills
+
+[chatgpt-app-submission.json](chatgpt-app-submission.json) contains the app submission metadata,
+tool annotation justifications, and review test cases. Keep its tool descriptions and justifications
+aligned with the hosted server when capabilities change.
+
+Four optional skills turn the existing read-only tools into reusable workflows:
+
+- [Visibility report](skills/mencoro-visibility-report/SKILL.md): performance summaries, trends, and query gains or losses.
+- [Competitor analysis](skills/mencoro-competitor-analysis/SKILL.md): share of voice and head-to-head comparisons.
+- [Sentiment review](skills/mencoro-sentiment-review/SKILL.md): sentiment breakdowns with attributed mention excerpts.
+- [Coverage audit](skills/mencoro-coverage-audit/SKILL.md): current monitoring coverage and stale queries.
+
+In the submission portal's **Skills** step, upload each skill folder under `skills/`, or a ZIP
+containing that folder. Include both `SKILL.md` and `agents/openai.yaml`; the latter declares the
+existing Mencoro MCP connection. Users need to connect their Mencoro account through OAuth.
+These skills require no additional backend endpoint or local executable.
+
+The portal stores an uploaded snapshot. Upload revised bundles when instructions change, and test
+each workflow with a connected account before submitting the app. See the
+[OpenAI skills guide](https://learn.chatgpt.com/docs/build-skills).
+
 ## The bridge
 
 ### Run it
@@ -294,6 +316,8 @@ anything added later all pass straight through.
 | `src/`, `test/` | The stdio bridge published as `@mencoro/mcp`. |
 | `server.json` | The [MCP registry](https://registry.modelcontextprotocol.io) manifest. |
 | `glama.json` | Glama directory ownership metadata. |
+| `chatgpt-app-submission.json` | ChatGPT app submission metadata and tool justifications. |
+| `skills/` | Four reusable Mencoro analysis workflows for ChatGPT. |
 | `Dockerfile` | The image published to `ghcr.io/mencoro/mencoro-mcp`. |
 | `assets/`, `logo.png` | Brand assets used by directory listings. |
 
