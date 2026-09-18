@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Sentiment Review"
+  short_description: "Review sentiment with supporting mention examples"
+  default_prompt: "Use $mencoro-sentiment-review to analyze my brand sentiment and show supporting mention examples."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Read-only Mencoro brand-monitoring analytics"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"

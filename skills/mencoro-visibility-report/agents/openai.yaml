@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Visibility Report"
+  short_description: "Summarize brand visibility and recent changes"
+  default_prompt: "Use $mencoro-visibility-report to summarize my brand visibility and recent changes in Mencoro."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Read-only Mencoro brand-monitoring analytics"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"

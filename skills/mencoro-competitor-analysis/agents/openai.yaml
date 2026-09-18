@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Competitor Analysis"
+  short_description: "Compare tracked competitors using stored evidence"
+  default_prompt: "Use $mencoro-competitor-analysis to compare my brand with its tracked competitors in Mencoro."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Read-only Mencoro brand-monitoring analytics"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"
