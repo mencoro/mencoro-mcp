@@ -231,6 +231,11 @@ All 17 are read-only. Nothing in this server can change a project, a tracked que
 Dates are ISO `YYYY-MM-DD` and must fall inside the retention window. Positions are
 1-based and **lower is better**; every other metric improves as it rises.
 
+The live definitions — names, descriptions, input and output schemas, annotations — are readable
+without a credential at `https://api.mencoro.com/public/v1/mcp`, a discovery-only mount of the same
+server that answers `initialize`, `ping`, `tools/list` and `prompts/list` and refuses everything
+else. Calling a tool still requires signing in at `https://api.mencoro.com/mcp`.
+
 ## Prompts
 
 Twelve ready-made questions, surfaced by clients that support MCP prompts:
@@ -283,7 +288,7 @@ docker run --rm -i -e MENCORO_API_KEY=mcp_pat_your_token ghcr.io/mencoro/mencoro
 
 | | |
 |---|---|
-| `MENCORO_API_KEY` | Personal access token. Without it the bridge starts anyway and serves a single `mencoro_setup` tool explaining how to get one. |
+| `MENCORO_API_KEY` | Personal access token. Without it the bridge still starts and still advertises the full catalogue, but every tool answers with setup instructions instead of data. |
 | `MENCORO_MCP_URL` | Upstream endpoint. Defaults to `https://api.mencoro.com/mcp`. |
 | `--url <url>` | Same, as an argument. |
 | `--header "Name: value"` | Extra HTTP header, repeatable. An `Authorization` header here overrides `MENCORO_API_KEY`. |
@@ -298,6 +303,19 @@ enough to echo the negotiated protocol version back upstream and to rebuild the 
 server evicts it, which a deploy or a scale-down will do. It knows no other method, so it cannot
 drift from the server: tools, prompts, resources, completions, progress notifications and
 anything added later all pass straight through.
+
+### Without a credential
+
+The bridge starts anyway, serving [`catalog.json`](catalog.json) — a committed copy of what the
+hosted server advertises — plus a `mencoro_setup` tool. So `npx -y @mencoro/mcp` introspects to the
+same 17 tools and 12 prompts a credentialed run does, and anything that scans the package sees a
+real catalogue rather than a server that looks empty. Calling one of those tools returns the setup
+instructions as an error; it never returns invented data.
+
+`npm run sync:catalog` refreshes the file from the anonymous catalogue endpoint, and
+`npm run check:catalog` fails if the committed copy has fallen behind. A scheduled workflow runs
+the check weekly, because the catalogue it mirrors lives in another repository and nothing in a
+pull request here would notice it drifting.
 
 ## Limits
 
@@ -314,6 +332,8 @@ anything added later all pass straight through.
 | | |
 |---|---|
 | `src/`, `test/` | The stdio bridge published as `@mencoro/mcp`. |
+| `catalog.json` | What the hosted server advertises, served by the bridge when it has no credential. |
+| `scripts/` | Manifest and catalogue checks run by CI. |
 | `server.json` | The [MCP registry](https://registry.modelcontextprotocol.io) manifest. |
 | `glama.json` | Glama directory ownership metadata. |
 | `chatgpt-app-submission.json` | ChatGPT app submission metadata and tool justifications. |
@@ -328,6 +348,7 @@ npm ci
 npm run typecheck
 npm test            # builds first, then runs the suite
 npm run check:manifests
+npm run check:catalog   # asks the hosted server whether catalog.json is still current
 ```
 
 Tests run the TypeScript sources directly through Node's type stripping, so development needs

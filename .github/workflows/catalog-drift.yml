@@ -1,0 +1,30 @@
+name: Catalog drift
+
+# The committed catalog.json is what an uncredentialed `npx @mencoro/mcp` advertises, but the
+# catalogue it mirrors lives in the backend repository — so nothing in a pull request here can
+# notice it going stale. This job asks the hosted server directly, on a schedule, and fails loudly
+# when the two disagree.
+#
+# Deliberately not part of CI or the release gate: it depends on a live third-party endpoint, and a
+# transient outage must not block a pull request or a publish.
+on:
+  schedule:
+    # Mondays, 07:11 UTC. Off the hour to avoid the scheduler's own peak.
+    - cron: '11 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Committed catalogue matches the hosted server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 'lts/*'
+          cache: npm
+      - run: npm ci
+      - run: npm run check:catalog

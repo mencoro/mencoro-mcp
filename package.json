@@ -34,6 +34,7 @@
   "files": [
     "dist",
     "src",
+    "catalog.json",
     "README.md",
     "LICENSE"
   ],
@@ -51,7 +52,9 @@
     "test": "node --test test/*.test.ts",
     "prepack": "npm run build",
     "start": "node dist/cli.js",
-    "check:manifests": "node scripts/check-manifests.mjs"
+    "check:manifests": "node scripts/check-manifests.mjs",
+    "sync:catalog": "node scripts/sync-catalog.mjs",
+    "check:catalog": "node scripts/sync-catalog.mjs --check"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "^2.0.0",

@@ -60,6 +60,26 @@ if (server.description.length > 100) {
   problems.push(`server.json description is ${server.description.length} characters; the registry schema caps it at 100`);
 }
 
+// catalog.json is require()d at startup by the keyless setup server. Leaving it out of `files`
+// publishes a package that throws MODULE_NOT_FOUND on `npx @mencoro/mcp` — and it would be found
+// by a user, not by CI, because everything before the publish runs from a checkout that has it.
+if (!pkg.files.includes('catalog.json')) {
+  problems.push('package.json "files" does not include catalog.json, which the setup server reads at runtime');
+}
+
+const catalog = read('catalog.json');
+
+if (!Array.isArray(catalog.tools) || catalog.tools.length === 0) {
+  problems.push('catalog.json advertises no tools');
+}
+
+// The Docker image builds its own file list rather than using `files`.
+const dockerfile = readFileSync(fileURLToPath(new URL('../Dockerfile', import.meta.url)), 'utf8');
+
+if (!/^COPY .*catalog\.json/m.test(dockerfile)) {
+  problems.push('Dockerfile does not copy catalog.json into the runtime image');
+}
+
 if (problems.length > 0) {
   for (const problem of problems) {
     process.stderr.write(`✗ ${problem}\n`);

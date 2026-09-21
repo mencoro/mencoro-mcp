@@ -1,0 +1,3220 @@
+{
+    "source": "https://api.mencoro.com/public/v1/mcp",
+    "tools": [
+        {
+            "name": "get_available_filters",
+            "title": "Get available project filters",
+            "description": "Discover the engines, countries, keyword clusters and competitors configured on a project so subsequent metric tools can be called with valid filter values. Engines and countries are returned as {code, label} (e.g. {\"code\":\"chatgpt\",\"label\":\"ChatGPT\"}, {\"code\":\"US\",\"label\":\"United States\"}); clusters and competitors as {id, name}. Always pass the \"code\"/\"id\" (never the label/name) to the other tools' engines / countries / queryClusterIds / competitorId(s) parameters. Call this before filtering.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "engines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "label"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "label"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "clusters": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "competitors": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "engines",
+                    "countries",
+                    "clusters",
+                    "competitors"
+                ]
+            },
+            "annotations": {
+                "title": "Get available project filters",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_cited_sources",
+            "title": "Cited domains and pages",
+            "description": "The domains (groupBy=domain) or pages (groupBy=page) most cited across a project's AI answers in a date window — the sources the answer engines drew on. Per source: how many times it was cited, how many distinct answers and tracked queries it appeared in, and its average rank within the citation lists. The list is UNFILTERED by ownership: it includes the brand's, competitors' and third-party sources. Only AI answer engines (chatgpt, perplexity, google_ai_overview, google_ai_mode) produce citations. Dates must fall within the data retention window. Answers questions like \"which websites and pages does the AI cite or quote for me versus competitors\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode (only AI engines carry citations)",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "groupBy": {
+                        "type": "string",
+                        "description": "\"domain\" to roll up by host, \"page\" to roll up by exact URL",
+                        "default": "domain",
+                        "enum": [
+                            "domain",
+                            "page"
+                        ]
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "minimum": 1,
+                        "maximum": 50
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "default": 0,
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "sources": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "groupKey": {
+                                    "type": "string"
+                                },
+                                "domain": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "citationCount": {
+                                    "type": "integer"
+                                },
+                                "distinctQueryCount": {
+                                    "type": "integer"
+                                },
+                                "distinctResponseCount": {
+                                    "type": "integer"
+                                },
+                                "avgPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "sampleTitle": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "sampleUrl": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "groupKey",
+                                "citationCount",
+                                "distinctResponseCount",
+                                "sampleUrl"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "sources",
+                    "total"
+                ]
+            },
+            "annotations": {
+                "title": "Cited domains and pages",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_cluster_breakdown",
+            "title": "Rank tracking by keyword cluster",
+            "description": "Rank-tracking metrics broken down per keyword cluster for a project over a date window: one row per cluster with its positions, share of voice and sentiment. Dates must fall within the data retention window. Answers questions like \"which keyword clusters are strongest or weakest\" or \"how does my niche compare to my generic queries\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "description": "restrict to these keyword clusters",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "includeUngroupedQueries": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "clusterId": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "clusterName": {
+                                    "type": "string"
+                                },
+                                "queryCount": {
+                                    "type": "integer"
+                                },
+                                "keywordCount": {
+                                    "type": "integer"
+                                },
+                                "avgSerpPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "avgMentionPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "avgLinkPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "positivityIndex": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 sentiment score; higher is better."
+                                },
+                                "mentionRate": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                },
+                                "serpRate": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                },
+                                "shareOfVoice": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                },
+                                "sentimentPositive": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "sentimentNeutral": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "sentimentNegative": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "avgMentionCount": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "mentionTypeCounts": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "clusterId",
+                                "clusterName",
+                                "queryCount",
+                                "keywordCount"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "dataDirtySince": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "rows"
+                ]
+            },
+            "annotations": {
+                "title": "Rank tracking by keyword cluster",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_competitor_cooccurrence",
+            "title": "Competitor co-occurrence (head-to-head)",
+            "description": "For the AI answers where the brand and a competitor are BOTH mentioned, compares who is named higher. One row per tracked competitor: how many answers they co-appear in, how often the brand out-ranks / loses to / ties them (by best mention position), the win rate, the average positions, and one representative shared query. Optionally focus a single competitor via competitorId. Tracked competitors only. Dates must fall within the data retention window. Answers questions like \"who wins when we both appear\", \"do I outrank competitor X\", \"who is mentioned first\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode (SERP/Shopping have no AI text mentions)",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "competitorId": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "optional competitor UUID to focus on a single rival; competitor UUIDs are listed by get_available_filters (competitors[].id)",
+                        "default": null,
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "competitors": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "competitorId": {
+                                    "type": "string"
+                                },
+                                "sharedResponseCount": {
+                                    "type": "integer"
+                                },
+                                "brandWins": {
+                                    "type": "integer"
+                                },
+                                "competitorWins": {
+                                    "type": "integer"
+                                },
+                                "ties": {
+                                    "type": "integer"
+                                },
+                                "winRate": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "Percentage 0-100 of shared answers where the brand outranks the competitor; higher is better."
+                                },
+                                "avgOwnPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "avgCompetitorPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "exampleQueryText": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "exampleAiResponseId": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "competitorId",
+                                "sharedResponseCount",
+                                "brandWins",
+                                "competitorWins",
+                                "ties"
+                            ],
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "required": [
+                    "competitors"
+                ]
+            },
+            "annotations": {
+                "title": "Competitor co-occurrence (head-to-head)",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_mention_mix",
+            "title": "AI mention mix (type/tone/qualifier)",
+            "description": "The brand's AI text-mention counts over a date window grouped by type, tone and qualifier — the inputs behind the share-of-voice weighted score. Use to understand mention composition and weighting. For the positive/neutral/negative sentiment split use get_sentiment_breakdown; to read the actual mention texts use get_mention_samples. Dates must fall within the data retention window. Answers questions like \"am I recommended or just listed\" or \"break my mentions down by type\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "byType": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    },
+                    "byTone": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    },
+                    "byQualifier": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "required": [
+                    "byType",
+                    "byTone",
+                    "byQualifier"
+                ]
+            },
+            "annotations": {
+                "title": "AI mention mix (type/tone/qualifier)",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_mention_samples",
+            "title": "Sample AI mention texts",
+            "description": "Paginated sample of the raw AI mention texts themselves, for qualitative review and verifying sentiment labels. Use to READ individual mentions. For the aggregate sentiment split use get_sentiment_breakdown; for weighted mention-type counts use get_mention_mix. Filterable by engine, sentiment, mention type and competitor. Dates must fall within the data retention window. limit is 1-50 (default 20). Answers questions like \"show or export the actual AI mention texts\" for a query.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "sentiment": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "default": null,
+                        "enum": [
+                            "positive",
+                            "neutral",
+                            "negative",
+                            null
+                        ]
+                    },
+                    "competitorId": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "UUID of a single competitor to filter to; competitor UUIDs are listed by get_available_filters (competitors[].id). Omit to include all competitors",
+                        "default": null,
+                        "format": "uuid"
+                    },
+                    "mentionType": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "default": null,
+                        "enum": [
+                            "recommendation",
+                            "comparison",
+                            "listing",
+                            "example",
+                            "reference",
+                            null
+                        ]
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "sortBy": {
+                        "type": "string",
+                        "default": "recent",
+                        "enum": [
+                            "recent",
+                            "negative",
+                            "engine",
+                            "country"
+                        ]
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "minimum": 1,
+                        "maximum": 50
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "default": 0,
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "samples": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "trackedQueryId": {
+                                    "type": "string"
+                                },
+                                "aiResponseId": {
+                                    "type": "string"
+                                },
+                                "engine": {
+                                    "type": "string"
+                                },
+                                "competitorId": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "sentiment": {
+                                    "type": "string"
+                                },
+                                "mentionType": {
+                                    "type": "string"
+                                },
+                                "mentionPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "text": {
+                                    "type": "string"
+                                },
+                                "detectedAt": {
+                                    "type": "string"
+                                },
+                                "queryText": {
+                                    "type": "string"
+                                },
+                                "country": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "engine",
+                                "sentiment",
+                                "mentionType",
+                                "text"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "samples",
+                    "total"
+                ]
+            },
+            "annotations": {
+                "title": "Sample AI mention texts",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_metric_glossary",
+            "title": "Metric glossary",
+            "description": "Map a plain-language or unfamiliar request to the right Mencoro metric and tool. Returns each metric with its everyday synonyms, unit, value range, whether higher or lower is better, the tool that serves it, and example questions. Call this first when a request is vague, non-technical, phrased in another language, or uses wording that does not match a tool name. Static reference; no project data.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "organizationId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "metrics": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "metric": {
+                                    "type": "string"
+                                },
+                                "aliases": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "unit": {
+                                    "type": "string"
+                                },
+                                "range": {
+                                    "type": "string"
+                                },
+                                "direction": {
+                                    "type": "string",
+                                    "enum": [
+                                        "higher_is_better",
+                                        "lower_is_better",
+                                        "n/a"
+                                    ]
+                                },
+                                "tool": {
+                                    "type": "string"
+                                },
+                                "exampleQuestions": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "metric",
+                                "aliases",
+                                "unit",
+                                "range",
+                                "direction",
+                                "tool",
+                                "exampleQuestions"
+                            ],
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "required": [
+                    "metrics"
+                ]
+            },
+            "annotations": {
+                "title": "Metric glossary",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_organization_overview",
+            "title": "Organization brand overview",
+            "description": "Latest-snapshot rank-health board across all active projects in an organization: one row per brand (share of voice, mention rate, average mention position, positivity, tracked-query count) ranked by share of voice, plus an organization-level aggregate. This is a current-state snapshot and takes NO date window; for date-ranged comparison, call the per-project tools (e.g. get_project_rank_tracking_stats) for each project id returned here. Answers questions like \"give me a company-wide summary of share of voice and sentiment across all my projects\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "organizationId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "projects": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "projectId": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                },
+                                "trackedQueryCount": {
+                                    "type": "integer"
+                                },
+                                "shareOfVoice": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                },
+                                "mentionRate": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                },
+                                "avgMentionPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "positivityIndex": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 sentiment score; higher is better."
+                                }
+                            },
+                            "required": [
+                                "projectId",
+                                "name",
+                                "status",
+                                "trackedQueryCount"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "aggregate": {
+                        "type": "object",
+                        "properties": {
+                            "projectCount": {
+                                "type": "integer"
+                            },
+                            "projectsWithData": {
+                                "type": "integer"
+                            },
+                            "totalTrackedQueries": {
+                                "type": "integer"
+                            },
+                            "avgShareOfVoice": {
+                                "anyOf": [
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "avgMentionRate": {
+                                "anyOf": [
+                                    {
+                                        "type": "integer"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "avgMentionPosition": {
+                                "anyOf": [
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "description": "1-based rank; LOWER is better."
+                            },
+                            "avgPositivityIndex": {
+                                "anyOf": [
+                                    {
+                                        "type": "integer"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            }
+                        },
+                        "additionalProperties": true
+                    }
+                },
+                "required": [
+                    "projects",
+                    "aggregate"
+                ]
+            },
+            "annotations": {
+                "title": "Organization brand overview",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_project_rank_tracking_stats",
+            "title": "Project rank-tracking overview",
+            "description": "Aggregated rank-tracking summary for a project over a date window: average and best positions, trends, share of voice (own and per competitor), sentiment split, mention/SERP/shopping rates, and position-distribution buckets. This is the project overview; prefer it before the per-cluster or time-series tools. Dates must fall within the data retention window. Answers questions like \"how visible is my brand\", \"am I ahead of competitors\", \"how positive is my coverage\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "description": "restrict to these keyword clusters",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "includeUngroupedQueries": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "avgSerpPosition": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "1-based rank; LOWER is better."
+                    },
+                    "trendSerp": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in position vs the previous period; negative = improved (rank moved up)."
+                    },
+                    "avgShoppingPosition": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "1-based rank; LOWER is better."
+                    },
+                    "trendShopping": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in position vs the previous period; negative = improved (rank moved up)."
+                    },
+                    "avgMentionPosition": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "1-based rank; LOWER is better."
+                    },
+                    "trendMention": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in position vs the previous period; negative = improved (rank moved up)."
+                    },
+                    "avgLinkPosition": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "1-based rank; LOWER is better."
+                    },
+                    "trendLink": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in position vs the previous period; negative = improved (rank moved up)."
+                    },
+                    "mentionPositionStability": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "trendStability": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "serpPositionStability": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "trendSerpStability": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "shoppingPositionStability": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "trendShoppingStability": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "positivityIndex": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "0-100 sentiment score; higher is better."
+                    },
+                    "trendPositivity": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in the positivity index vs the previous period; positive = improved."
+                    },
+                    "mentionRate": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                    },
+                    "trendMentionRate": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in the rate vs the previous period; positive = improved."
+                    },
+                    "serpRate": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                    },
+                    "trendSerpRate": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in the rate vs the previous period; positive = improved."
+                    },
+                    "shoppingRate": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                    },
+                    "trendShoppingRate": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in the rate vs the previous period; positive = improved."
+                    },
+                    "shareOfVoice": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                    },
+                    "trendShareOfVoice": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Signed change in share of voice vs the previous period; positive = improved."
+                    },
+                    "sentimentPositive": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "sentimentNeutral": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "sentimentNegative": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "mentionCount": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "aiTrackedQueryCount": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "aiQueriesWithMention": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "serpTrackedQueryCount": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "serpQueriesWithResult": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "shoppingTrackedQueryCount": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "shoppingQueriesWithResult": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "mentionTypeCounts": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    },
+                    "mentionPositionDistribution": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "bucket": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "bucket",
+                                "count"
+                            ]
+                        }
+                    },
+                    "serpPositionDistribution": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "bucket": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "bucket",
+                                "count"
+                            ]
+                        }
+                    },
+                    "shoppingPositionDistribution": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "bucket": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "bucket",
+                                "count"
+                            ]
+                        }
+                    }
+                },
+                "additionalProperties": true
+            },
+            "annotations": {
+                "title": "Project rank-tracking overview",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_query_movers",
+            "title": "Biggest tracked-query movers",
+            "description": "Ranks a project's tracked queries by how much a metric changed between the given window and the immediately preceding window of equal length — the biggest gainers and losers. Each row is one tracked query (a single engine + country) with its current position/share/sentiment and the signed trend delta (positive = improved). Sort by one of the trend keys; sortOrder desc = top gainers, asc = top losers. Dates must fall within the data retention window. Answers questions like \"which queries moved the most\" or \"my biggest gains and drops versus last period\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "sortBy": {
+                        "type": "string",
+                        "description": "which trend delta to rank by",
+                        "default": "trend_share_of_voice",
+                        "enum": [
+                            "trend_serp",
+                            "trend_shopping",
+                            "trend_mention",
+                            "trend_link",
+                            "trend_share_of_voice"
+                        ]
+                    },
+                    "sortOrder": {
+                        "type": "string",
+                        "description": "desc for top gainers, asc for top losers",
+                        "default": "desc",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ]
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "minimum": 1,
+                        "maximum": 50
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "default": 0,
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "dataDirtySince": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "rows",
+                    "total"
+                ]
+            },
+            "annotations": {
+                "title": "Biggest tracked-query movers",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_rank_tracking_time_series",
+            "title": "Rank-tracking time series",
+            "description": "Time series of rank-tracking metrics for a project across a date window, bucketed by granularity (daily, weekly or monthly). Prefer weekly or monthly for long windows to keep the response compact. Optionally includes per-competitor lines. Dates must fall within the data retention window. Answers questions like \"what changed in my AI visibility\" or \"show my share-of-voice trend split by engine\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "granularity": {
+                        "type": "string",
+                        "default": "daily",
+                        "enum": [
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ]
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "description": "restrict to these keyword clusters",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "includeUngroupedQueries": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "competitorIds": {
+                        "type": "array",
+                        "description": "UUIDs of competitors to add as extra series; competitor UUIDs are listed by get_available_filters (competitors[].id)",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "points": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "rawDate": {
+                                    "type": "string"
+                                },
+                                "brand": {
+                                    "type": "object",
+                                    "properties": {
+                                        "serp": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "shopping": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "mention": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "link": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "positivity": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "0-100 sentiment score; higher is better."
+                                        },
+                                        "shareOfVoice": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                        },
+                                        "mentionRate": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                        },
+                                        "serpRate": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                        }
+                                    },
+                                    "additionalProperties": true
+                                },
+                                "competitors": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "properties": {
+                                            "serp": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "shopping": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "mention": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "link": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "positivity": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "0-100 sentiment score; higher is better."
+                                            },
+                                            "shareOfVoice": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                            },
+                                            "mentionRate": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                            },
+                                            "serpRate": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                            }
+                                        },
+                                        "additionalProperties": true
+                                    }
+                                }
+                            },
+                            "required": [
+                                "rawDate",
+                                "brand",
+                                "competitors"
+                            ]
+                        }
+                    },
+                    "dataDirtySince": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "points"
+                ]
+            },
+            "annotations": {
+                "title": "Rank-tracking time series",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_sentiment_breakdown",
+            "title": "AI mention sentiment breakdown",
+            "description": "Positive/neutral/negative sentiment split of the brand's AI mentions over a date window, per AI engine and per competitor. Use for tone/sentiment questions. For the weighted mention-type counts behind share-of-voice use get_mention_mix; to read the actual mention texts use get_mention_samples. Dates must fall within the data retention window. Answers questions like \"is anything negative being said about my brand\" or \"how positive is my coverage\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "description": "restrict to these keyword clusters",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "includeUngroupedQueries": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "perEngine": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "engine": {
+                                    "type": "string"
+                                },
+                                "positive": {
+                                    "type": "integer"
+                                },
+                                "neutral": {
+                                    "type": "integer"
+                                },
+                                "negative": {
+                                    "type": "integer"
+                                },
+                                "mentionCount": {
+                                    "type": "integer"
+                                },
+                                "positivityIndex": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 sentiment score; higher is better."
+                                }
+                            },
+                            "required": [
+                                "engine",
+                                "positive",
+                                "neutral",
+                                "negative",
+                                "mentionCount"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "perCompetitor": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "competitorId": {
+                                    "type": "string"
+                                },
+                                "positive": {
+                                    "type": "integer"
+                                },
+                                "neutral": {
+                                    "type": "integer"
+                                },
+                                "negative": {
+                                    "type": "integer"
+                                },
+                                "mentionCount": {
+                                    "type": "integer"
+                                },
+                                "positivityIndex": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 sentiment score; higher is better."
+                                },
+                                "mentionTypeCounts": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "competitorId",
+                                "positive",
+                                "neutral",
+                                "negative",
+                                "mentionCount"
+                            ],
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "required": [
+                    "perEngine",
+                    "perCompetitor"
+                ]
+            },
+            "annotations": {
+                "title": "AI mention sentiment breakdown",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_share_of_voice_formula",
+            "title": "Share-of-voice formula constants",
+            "description": "The constants behind the share-of-voice score: per-mention-type base weights and tone/qualifier multipliers. Use this to explain how the share-of-voice metric is derived. Global (not project-specific), but scoped to a project you can access.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "mentionTypeWeights": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number"
+                        }
+                    },
+                    "sentimentMultipliers": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number"
+                        }
+                    },
+                    "directMultiplier": {
+                        "type": "number"
+                    },
+                    "conditionalMultiplier": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "mentionTypeWeights",
+                    "sentimentMultipliers",
+                    "directMultiplier",
+                    "conditionalMultiplier"
+                ]
+            },
+            "annotations": {
+                "title": "Share-of-voice formula constants",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_tracked_query_time_series",
+            "title": "Single tracked-query time series",
+            "description": "Time series of rank-tracking metrics for ONE tracked query across a date window, bucketed by granularity (daily, weekly or monthly). The tracked query fixes the engine and country, so those are not parameters. Use search_tracked_queries to find a trackedQueryId. Optionally includes per-competitor lines. Prefer weekly or monthly for long windows. Dates must fall within the data retention window. Answers questions like \"show the share-of-voice and position history of this one query over the last N months\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryId": {
+                        "type": "string",
+                        "description": "a tracked query UUID from search_tracked_queries (items[].id)",
+                        "format": "uuid"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "granularity": {
+                        "type": "string",
+                        "default": "daily",
+                        "enum": [
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ]
+                    },
+                    "competitorIds": {
+                        "type": "array",
+                        "description": "UUIDs of competitors to add as extra series; competitor UUIDs are listed by get_available_filters (competitors[].id)",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "points": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "rawDate": {
+                                    "type": "string"
+                                },
+                                "brand": {
+                                    "type": "object",
+                                    "properties": {
+                                        "serp": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "shopping": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "mention": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "link": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "1-based rank; LOWER is better."
+                                        },
+                                        "positivity": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "0-100 sentiment score; higher is better."
+                                        },
+                                        "shareOfVoice": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                        },
+                                        "mentionRate": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                        },
+                                        "serpRate": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ],
+                                            "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                        }
+                                    },
+                                    "additionalProperties": true
+                                },
+                                "competitors": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "properties": {
+                                            "serp": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "shopping": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "mention": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "link": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "1-based rank; LOWER is better."
+                                            },
+                                            "positivity": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "0-100 sentiment score; higher is better."
+                                            },
+                                            "shareOfVoice": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                            },
+                                            "mentionRate": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                            },
+                                            "serpRate": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "Percentage 0-100 of tracked queries with a result in the period; higher is better."
+                                            }
+                                        },
+                                        "additionalProperties": true
+                                    }
+                                }
+                            },
+                            "required": [
+                                "rawDate",
+                                "brand",
+                                "competitors"
+                            ]
+                        }
+                    },
+                    "dataDirtySince": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "points"
+                ]
+            },
+            "annotations": {
+                "title": "Single tracked-query time series",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_tracking_coverage",
+            "title": "Tracking coverage & staleness",
+            "description": "Coverage summary for a project's tracked queries: counts of total, active, paused, never-checked, and overdue (past their check-frequency interval) queries, plus a sample of the most-overdue ones. Answers \"what is stale / not being tracked\" in one call. Never-checked and overdue are scoped to active queries. This is a current-state snapshot and takes no date window. Answers questions like \"what is stale or not being monitored\", \"which queries are overdue, paused, or never checked\", \"how fresh is my data\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "active": {
+                        "type": "integer"
+                    },
+                    "paused": {
+                        "type": "integer"
+                    },
+                    "neverChecked": {
+                        "type": "integer"
+                    },
+                    "overdue": {
+                        "type": "integer"
+                    },
+                    "sample": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "trackedQueryId": {
+                                    "type": "string"
+                                },
+                                "queryText": {
+                                    "type": "string"
+                                },
+                                "engine": {
+                                    "type": "string"
+                                },
+                                "country": {
+                                    "type": "string"
+                                },
+                                "checkFrequency": {
+                                    "type": "string"
+                                },
+                                "lastCheckedAt": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "trackedQueryId",
+                                "queryText",
+                                "engine",
+                                "country",
+                                "checkFrequency"
+                            ],
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "required": [
+                    "projectId",
+                    "total",
+                    "active",
+                    "paused",
+                    "neverChecked",
+                    "overdue",
+                    "sample"
+                ]
+            },
+            "annotations": {
+                "title": "Tracking coverage & staleness",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "list_projects",
+            "title": "List organizations and projects",
+            "description": "List every organization the caller belongs to and its active projects. Call this FIRST: the returned (organizationId, projectId) pairs are required by every other tool.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "projects": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "status": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "name",
+                                            "status"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "projects"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "organizations"
+                ]
+            },
+            "annotations": {
+                "title": "List organizations and projects",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "search_tracked_queries",
+            "title": "Search tracked queries",
+            "description": "Search and paginate the tracked queries (keywords) of a project with their latest rank positions and metrics. Filter by status (active/paused), engines, countries and a free-text search. Sort by one of: queryText, lastSerpPosition, lastMentionPosition, lastShoppingPosition, lastShareOfVoice, lastPositivityIndex, lastMentionCount, lastCheckedAt. limit is 1-100 (default 20). Answers questions like \"list my top queries by share of voice\" or \"find a specific tracked query\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "default": null,
+                        "enum": [
+                            "active",
+                            "paused",
+                            null
+                        ]
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "search": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "default": null
+                    },
+                    "sortBy": {
+                        "type": "string",
+                        "default": "queryText",
+                        "enum": [
+                            "queryText",
+                            "lastSerpPosition",
+                            "lastMentionPosition",
+                            "lastShoppingPosition",
+                            "lastShareOfVoice",
+                            "lastPositivityIndex",
+                            "lastMentionCount",
+                            "lastCheckedAt"
+                        ]
+                    },
+                    "sortOrder": {
+                        "type": "string",
+                        "default": "desc",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ]
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "minimum": 1,
+                        "maximum": 100
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "default": 0,
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "queryText": {
+                                    "type": "string"
+                                },
+                                "engine": {
+                                    "type": "string"
+                                },
+                                "country": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                },
+                                "queryClusterIds": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "checkFrequency": {
+                                    "type": "string"
+                                },
+                                "nPasses": {
+                                    "type": "integer"
+                                },
+                                "lastSerpPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "lastMentionPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "lastLinkPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "lastShoppingPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based rank; LOWER is better."
+                                },
+                                "lastShareOfVoice": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 percentage share of weighted AI mentions vs all tracked brands; higher is better."
+                                },
+                                "lastPositivityIndex": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "0-100 sentiment score; higher is better."
+                                },
+                                "lastPositiveMentionCount": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastNeutralMentionCount": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastNegativeMentionCount": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastCheckedAt": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "queryText",
+                                "engine",
+                                "country",
+                                "status"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "items",
+                    "total"
+                ]
+            },
+            "annotations": {
+                "title": "Search tracked queries",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
+            }
+        }
+    ],
+    "prompts": [
+        {
+            "name": "biggest_movers",
+            "title": "Biggest movers",
+            "description": "The tracked queries that moved the most versus the previous period.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "brand_ai_overview",
+            "title": "Brand AI overview",
+            "description": "Board-ready summary of how a brand/project is showing up in AI answers this period.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "cited_sources",
+            "title": "Cited sources",
+            "description": "Which websites and pages the AI cites when it answers for a brand.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "competitor_standing",
+            "title": "Competitor standing",
+            "description": "Whether a brand is ahead of or behind its competitors, and where it is losing ground.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "coverage_health",
+            "title": "Tracking coverage & freshness",
+            "description": "How fresh a project's data is and which tracked queries are stale, overdue, paused or never checked.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "head_to_head",
+            "title": "Head-to-head vs a competitor",
+            "description": "Queries where a brand and a named competitor appear in the same AI answer, and who wins.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "competitor",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "negative_mentions",
+            "title": "Negative mentions",
+            "description": "Whether anything negative is being said about a brand, with the offending mentions.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "organization_overview",
+            "title": "Organization overview",
+            "description": "Combined share of voice and sentiment across every project in an organization.",
+            "arguments": [
+                {
+                    "name": "organization",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "query_history",
+            "title": "Single-query history",
+            "description": "Share-of-voice and position history of one specific tracked query over time.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "query",
+                    "required": true
+                },
+                {
+                    "name": "period",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "sov_explainer",
+            "title": "Explain Share of Voice",
+            "description": "Explain how a brand's Share of Voice is computed — the weights and multipliers.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "top_queries",
+            "title": "Top tracked queries",
+            "description": "A brand's best tracked queries by share of voice, with sentiment.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "whats_changed",
+            "title": "What's changed",
+            "description": "What changed in a brand's AI visibility over a recent period.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "since",
+                    "required": false
+                }
+            ]
+        }
+    ]
+}
