@@ -23,7 +23,9 @@ WORKDIR /app
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY package.json ./
+# catalog.json is read at runtime by the keyless setup server, exactly like package.json is read
+# for the version: omit it and `docker run` without a credential crashes on startup.
+COPY package.json catalog.json ./
 
 USER node
 
