@@ -3,7 +3,7 @@
   "name": "com.mencoro/mencoro",
   "title": "Mencoro",
   "description": "Track how your brand appears in AI answers: rank, mentions, sentiment, share of voice.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "websiteUrl": "https://mencoro.com/features/mcp-server/",
   "repository": {
     "url": "https://github.com/mencoro/mencoro-mcp",
@@ -37,7 +37,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@mencoro/mcp",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
@@ -61,7 +61,7 @@
     },
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/mencoro/mencoro-mcp:1.0.0",
+      "identifier": "ghcr.io/mencoro/mencoro-mcp:1.0.1",
       "transport": {
         "type": "stdio"
       },

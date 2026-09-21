@@ -1,6 +1,6 @@
 {
   "name": "@mencoro/mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "mcpName": "com.mencoro/mencoro",
   "description": "Stdio bridge to the hosted Mencoro MCP server for AI-search (GEO) brand monitoring.",
   "keywords": [
