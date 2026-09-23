@@ -6,6 +6,10 @@ version: 2
 # dependabot-security-merge job in ci.yml merges the safe ones. Keep every version update
 # inside a group, because that job treats an ungrouped Dependabot pull request as a security
 # fix candidate.
+#
+# Repository settings this relies on (Settings > Advanced Security > Dependabot): "Dependabot
+# alerts" and "Dependabot security updates" enabled, "Grouped security updates" disabled. This
+# file defines no security group, so that toggle would bundle the fixes into one pull request.
 updates:
   - package-ecosystem: npm
     directory: /
