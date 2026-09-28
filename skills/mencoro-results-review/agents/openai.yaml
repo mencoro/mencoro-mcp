@@ -1,7 +1,7 @@
 interface:
-  display_name: "Mencoro Sentiment Review"
-  short_description: "Review sentiment with supporting mention examples"
-  default_prompt: "Use $mencoro-sentiment-review to analyze my brand sentiment and show supporting mention examples."
+  display_name: "Mencoro Results Review"
+  short_description: "Check whether a change moved AI visibility"
+  default_prompt: "Use $mencoro-results-review to check whether our latest content change improved AI visibility in Mencoro."
 
 dependencies:
   tools:

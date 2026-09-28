@@ -1,7 +1,8 @@
 import type { Readable, Writable } from 'node:stream';
 
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { McpServer, fromJsonSchema } from '@modelcontextprotocol/server';
-import type { JsonSchemaValidator, jsonSchemaValidator } from '@modelcontextprotocol/server';
+import type { CallToolResult, JsonSchemaValidator, jsonSchemaValidator } from '@modelcontextprotocol/server';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 
 import { CATALOG, promptArgumentsSchema } from './catalog.ts';
@@ -9,6 +10,38 @@ import { DEFAULT_MCP_URL, TOKEN_ENV_VAR } from './config.ts';
 import { PACKAGE_VERSION } from './version.ts';
 
 export const SETUP_TOOL_NAME = 'mencoro_setup';
+
+/**
+ * Tools the hosted server answers without a credential, on its public endpoint: they read published
+ * material only (the Mencoro guide). The keyless bridge forwards calls to them instead of refusing.
+ */
+export const PUBLIC_TOOLS: readonly string[] = ['get_mencoro_guide'];
+
+/** The hosted server's anonymous endpoint, on the same host as the configured one. */
+export const publicEndpoint = (url: URL): URL => new URL('/public/v1/mcp', url);
+
+const callPublicTool = async (url: URL, name: string, args: Record<string, unknown>): Promise<CallToolResult> => {
+  const endpoint = publicEndpoint(url);
+  const client = new Client({ name: 'mencoro-mcp-bridge', version: PACKAGE_VERSION });
+
+  try {
+    await client.connect(new StreamableHTTPClientTransport(endpoint));
+
+    return (await client.callTool({ name, arguments: args })) as CallToolResult;
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `The public Mencoro guide could not be reached at ${endpoint.href}: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+      isError: true,
+    };
+  } finally {
+    await client.close().catch(() => undefined);
+  }
+};
 
 const setupText = (url: URL): string =>
   [
@@ -63,7 +96,8 @@ export const createSetupServer = (url: URL): McpServer => {
       capabilities: { tools: {}, prompts: {} },
       instructions:
         `This Mencoro MCP bridge has no credential configured, so every tool below reports what is ` +
-        `missing rather than returning data. Call "${SETUP_TOOL_NAME}" for setup instructions.`,
+        `missing rather than returning data, except "${PUBLIC_TOOLS.join('", "')}", which answers questions ` +
+        `about Mencoro itself from its public guide. Call "${SETUP_TOOL_NAME}" for setup instructions.`,
     }
   );
 
@@ -87,7 +121,9 @@ export const createSetupServer = (url: URL): McpServer => {
         ...(tool.annotations === undefined ? {} : { annotations: tool.annotations }),
         inputSchema: fromJsonSchema(tool.inputSchema, acceptAnyArguments),
       },
-      () => ({ content: [{ type: 'text' as const, text: credentialRequired(tool.name, url) }], isError: true })
+      PUBLIC_TOOLS.includes(tool.name)
+        ? (args: unknown) => callPublicTool(url, tool.name, (args ?? {}) as Record<string, unknown>)
+        : () => ({ content: [{ type: 'text' as const, text: credentialRequired(tool.name, url) }], isError: true })
     );
   }
 

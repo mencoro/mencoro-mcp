@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 
 import { CATALOG } from '../src/catalog.ts';
-import { SETUP_TOOL_NAME, startSetupServer } from '../src/setup-server.ts';
-import { StdioPair, type JsonRpcMessage } from './helpers.ts';
+import { PUBLIC_TOOLS, SETUP_TOOL_NAME, publicEndpoint, startSetupServer } from '../src/setup-server.ts';
+import { StdioPair, startFakeUpstream, type JsonRpcMessage } from './helpers.ts';
 
 const ENDPOINT = new URL('https://api.mencoro.com/mcp');
 
@@ -23,9 +23,9 @@ interface ListedPrompt {
 }
 
 /** Brings up the keyless server and completes the handshake. */
-const handshake = async (): Promise<{ stdio: StdioPair; capabilities: Record<string, unknown> }> => {
+const handshake = async (url: URL = ENDPOINT): Promise<{ stdio: StdioPair; capabilities: Record<string, unknown> }> => {
   const stdio = new StdioPair();
-  const server = await startSetupServer(ENDPOINT, stdio.toServer, stdio.fromServer);
+  const server = await startSetupServer(url, stdio.toServer, stdio.fromServer);
 
   after(async () => {
     await server.close();
@@ -186,7 +186,72 @@ describe('the shipped catalogue', () => {
       assert.ok((tool.description ?? '').length >= 40, `${tool.name} has no usable description`);
       assert.ok(tool.title !== undefined && tool.title !== '', `${tool.name} has no title`);
       assert.equal(tool.inputSchema.type, 'object', `${tool.name} has no object input schema`);
-      assert.equal(tool.annotations?.readOnlyHint, true, `${tool.name} is not marked read-only`);
+      // Directories grade, and ChatGPT review requires, an explicit value for every hint rather
+      // than the protocol defaults, which assume a destructive, open-world tool.
+      for (const hint of ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'] as const) {
+        assert.equal(typeof tool.annotations?.[hint], 'boolean', `${tool.name} does not declare ${hint}`);
+      }
+      if (tool.annotations?.readOnlyHint === true) {
+        assert.equal(tool.annotations.destructiveHint, false, `${tool.name} is read-only yet destructive`);
+      }
     }
+  });
+});
+
+describe('the public guide without a credential', () => {
+  it('points at the anonymous endpoint on the configured host', () => {
+    assert.equal(publicEndpoint(new URL('https://api.mencoro.com/mcp')).href, 'https://api.mencoro.com/public/v1/mcp');
+    assert.equal(publicEndpoint(new URL('http://127.0.0.1:8080/mcp')).href, 'http://127.0.0.1:8080/public/v1/mcp');
+  });
+
+  it('only forwards tools the hosted server serves anonymously, and they are in the catalogue', () => {
+    for (const name of PUBLIC_TOOLS) {
+      assert.ok(CATALOG.tools.some((tool) => tool.name === name), `${name} is not in catalog.json`);
+    }
+  });
+
+  it('answers the guide from the public endpoint instead of asking for a credential', async () => {
+    const upstream = await startFakeUpstream();
+
+    after(async () => {
+      await upstream.close();
+    });
+
+    const { stdio } = await handshake(upstream.url);
+    const called = await request(stdio, {
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: { name: 'get_mencoro_guide', arguments: { topic: 'faq' } },
+    });
+
+    const result = called.result as { content: { type: string; text: string }[]; isError?: boolean };
+
+    assert.notEqual(result.isError, true);
+    assert.equal(result.content[0]?.text, 'ok');
+    assert.ok(upstream.requests.some((sent) => sent.method === 'tools/call'), 'the call must reach the upstream');
+    assert.ok(upstream.requests.every((sent) => sent.authorization === undefined), 'no credential may be sent');
+  });
+
+  it('still refuses every other tool without a credential', async () => {
+    const upstream = await startFakeUpstream();
+
+    after(async () => {
+      await upstream.close();
+    });
+
+    const { stdio } = await handshake(upstream.url);
+    const called = await request(stdio, {
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: { name: 'list_projects', arguments: {} },
+    });
+
+    const result = called.result as { content: { type: string; text: string }[]; isError?: boolean };
+
+    assert.equal(result.isError, true);
+    assert.match(result.content[0]?.text ?? '', /MENCORO_API_KEY/);
+    assert.ok(!upstream.requests.some((sent) => sent.method === 'tools/call'), 'a refused call must not reach the upstream');
   });
 });

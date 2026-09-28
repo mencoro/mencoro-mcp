@@ -40,7 +40,7 @@ export interface Catalog {
  * `tools/list` crosses verbatim. It exists for the uncredentialed run, where there is no upstream
  * session to ask — and a server that answers `tools/list` with a lone `mencoro_setup` tool is
  * indistinguishable, to an MCP registry or a directory scanner, from a server with nothing to
- * offer. Shipping the catalogue means `npx @mencoro/mcp` introspects to the same 17 tools a
+ * offer. Shipping the catalogue means `npx @mencoro/mcp` introspects to the same tools a
  * credentialed run serves, with the calls themselves still refused until a token is configured.
  *
  * Refresh it with `npm run sync:catalog`, which reads the endpoint in `source`. CI checks the

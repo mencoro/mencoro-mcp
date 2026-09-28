@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Cluster Reorganisation"
+  short_description: "Group tracked queries into keyword clusters"
+  default_prompt: "Use $mencoro-cluster-reorganisation to organise my Mencoro project's tracked queries into clusters."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Mencoro brand monitoring; this skill changes keyword clusters and needs the write permission"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"
