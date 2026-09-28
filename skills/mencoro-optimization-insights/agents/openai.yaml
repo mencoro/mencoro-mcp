@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Optimization Insights"
+  short_description: "Prioritise what to improve for AI visibility"
+  default_prompt: "Use $mencoro-optimization-insights to find what we should improve next for our AI visibility in Mencoro."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Mencoro brand-monitoring analytics; this skill uses read tools only"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"

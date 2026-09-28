@@ -4,7 +4,7 @@
         {
             "name": "apply_auto_clustering",
             "title": "Apply a proposed clustering",
-            "description": "Apply the grouping a completed start_auto_clustering job proposed: creates the clusters it named and moves the tracked queries into them, as the job's mode said. Show the proposal (get_job) to the user first. Pass a fresh requestId and reuse it if you retry, so a retry never applies twice.",
+            "description": "Apply the grouping a completed start_auto_clustering job proposed: creates the clusters it named and moves the tracked queries into them, as the job's mode said. Cluster names are lower-cased like create_clusters, and a proposed name that matches an existing cluster reuses it instead of creating a second one. Show the proposal (get_job) to the user first. Pass a fresh requestId and reuse it if you retry, so a retry never applies twice.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -666,7 +666,7 @@
         {
             "name": "create_project",
             "title": "Create a project",
-            "description": "Create a project that monitors a brand: its website domains, the brand names to look for, and optionally its competitors. Tracked queries are added afterwards with create_tracked_queries. suggest_brand_names and discover_brands can propose the names and competitors first. Pass a fresh requestId and reuse it if you retry, so a retry never creates a second project.",
+            "description": "Create a project that monitors a brand: its website domains, the brand names to look for, and optionally its competitors. Tracked queries are added afterwards with create_tracked_queries. Before calling it, propose everything to the user at once: brand names from suggest_brand_names, and competitors you suggest with their websites (no tool finds competitors; suggest_brand_names finds the names each one goes by). After the first checks, list_untracked_competitors shows other brands the answers name. Pass a fresh requestId and reuse it if you retry, so a retry never creates a second project.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1206,8 +1206,8 @@
         },
         {
             "name": "discover_brands",
-            "title": "Discover competitors",
-            "description": "Start a background job that finds the brands competing with a project in AI answers and search results, to propose as competitors. Poll get_job for the result, show it to the user, and add the chosen ones with create_competitor. shoppingEnabled also looks at Google Shopping; country narrows to one market (ISO 3166-1 alpha-2).",
+            "title": "Discover more brand names",
+            "description": "Start a background job that finds other names the project's brand and each of its existing competitors go by in AI answers and search results (aliases, product and store names). It does not find new competitors. Poll get_job for the result, show it to the user, and add the chosen names with update_project (the brand) or update_competitor (a competitor, by competitorId), passing the full list including the names already there. shoppingEnabled also looks at Google Shopping; country narrows to one market (ISO 3166-1 alpha-2).",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1267,7 +1267,7 @@
                 ]
             },
             "annotations": {
-                "title": "Discover competitors",
+                "title": "Discover more brand names",
                 "readOnlyHint": false,
                 "destructiveHint": false,
                 "idempotentHint": false,
@@ -2180,6 +2180,113 @@
             },
             "annotations": {
                 "title": "Get a background job",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_mencoro_guide",
+            "title": "Mencoro guide",
+            "description": "Answer questions about Mencoro itself from its public guide: what it tracks, how a check runs, what counts as a mention, how Coverage, Favorability, share of voice, positions and stability are calculated, how checks, plans and frequencies work, reliability and limits, how to use this MCP server (permissions, confirmations), how to analyse results and find what to improve, pairing with Ahrefs, Semrush, Search Console or Google Analytics MCP servers, and the REST API. Call it without a topic for the index, then with the topic that answers the question. No account data; works without signing in.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "The topic to read; omit it, or pass \"index\", for the list of topics.",
+                        "enum": [
+                            "index",
+                            "overview",
+                            "setup",
+                            "checks",
+                            "mentions-and-links",
+                            "metrics",
+                            "share-of-voice",
+                            "updates-and-scheduling",
+                            "plans-and-checks",
+                            "choosing-cadence",
+                            "reliability",
+                            "faq",
+                            "mcp-server",
+                            "companion-servers",
+                            "analysis-playbook",
+                            "api",
+                            null
+                        ]
+                    }
+                }
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "description": "The topic answered, or \"index\" for the list of topics",
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "description": "The guide text, in Markdown",
+                        "type": "string"
+                    },
+                    "source": {
+                        "description": "The public page this topic is written from",
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "related": {
+                        "description": "Other topics worth reading next",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "topics": {
+                        "description": "Every topic, on the index only; empty otherwise",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "topic": {
+                                    "type": "string"
+                                },
+                                "title": {
+                                    "type": "string"
+                                },
+                                "summary": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "topic",
+                                "title",
+                                "summary"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "topic",
+                    "title",
+                    "summary",
+                    "content",
+                    "source",
+                    "related",
+                    "topics"
+                ]
+            },
+            "annotations": {
+                "title": "Mencoro guide",
                 "readOnlyHint": true,
                 "destructiveHint": false,
                 "idempotentHint": true,
@@ -6664,6 +6771,145 @@
             }
         },
         {
+            "name": "list_untracked_competitors",
+            "title": "Brands the AI answers name that you do not track",
+            "description": "The brands a project's AI answers name that are not tracked as competitors (another brand offering the same thing), most-seen first: in how many answers and tracked queries, how often, their average position among the brands named, one query that named them, and when they were last seen. They count in no metric until tracked, so this is where to find competitors worth adding with create_competitor (their websites are not known here; confirm them with the user). Needs checks to have run; after a project is created its first checks run straight away. dateFrom and dateTo (YYYY-MM-DD) default to the last 30 days.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    "dateTo": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode (SERP/Shopping have no AI text mentions)",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes; a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "minimum": 1,
+                        "maximum": 50
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "brands": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "brandName": {
+                                    "description": "The most recent spelling the answers used",
+                                    "type": "string"
+                                },
+                                "answerCount": {
+                                    "description": "AI answers that named it",
+                                    "type": "integer"
+                                },
+                                "mentionCount": {
+                                    "description": "Times it was named, across those answers",
+                                    "type": "integer"
+                                },
+                                "queryCount": {
+                                    "description": "Tracked queries whose answers named it",
+                                    "type": "integer"
+                                },
+                                "avgPosition": {
+                                    "description": "Average place among the brands each answer named; 1 is first",
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ]
+                                },
+                                "exampleQueryText": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "lastSeenAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            },
+                            "required": [
+                                "brandName",
+                                "answerCount",
+                                "mentionCount",
+                                "queryCount",
+                                "avgPosition",
+                                "exampleQueryText",
+                                "lastSeenAt"
+                            ]
+                        }
+                    },
+                    "dateFrom": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "dateTo": {
+                        "type": "string",
+                        "format": "date"
+                    }
+                },
+                "required": [
+                    "brands",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "annotations": {
+                "title": "Brands the AI answers name that you do not track",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
             "name": "preview_operation",
             "title": "Preview an operation before running it",
             "description": "Describe exactly what a confirmable write tool would do and get the confirmationToken it requires. Pass the name of the write tool as \"tool\" and the arguments you would pass it (without confirmationToken and requestId) as \"arguments\". Show the returned plan to the user and wait for an explicit yes before calling the tool with the same arguments and this confirmationToken. The token is single-use, expires after a few minutes, and is refused if anything the plan describes has changed.",
@@ -7251,7 +7497,7 @@
         {
             "name": "run_checks",
             "title": "Check tracked queries now",
-            "description": "Check tracked queries now instead of waiting for their schedule: name up to 100 in trackedQueryIds, or pass all: true for every active tracked query of the project that is due. Each check spends budget (one per pass). Requires a confirmationToken: call preview_operation with tool \"run_checks\" and these arguments first, show the returned plan (which checks run, what they cost) to the user, and call this tool only after the user explicitly agrees. Results arrive over the next minutes; read them with the analytics tools.",
+            "description": "Check tracked queries now instead of waiting for their schedule: name up to 100 in trackedQueryIds, or pass all: true for every active tracked query of the project, however recently it was checked (a query whose check is still running is skipped). Each check spends budget (one per pass). Requires a confirmationToken: call preview_operation with tool \"run_checks\" and these arguments first, show the returned plan (which checks run, what they cost) to the user, and call this tool only after the user explicitly agrees. Results arrive over the next minutes; read them with the analytics tools.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -8568,6 +8814,21 @@
             ]
         },
         {
+            "name": "cross_source_analysis",
+            "title": "Combine with SEO and analytics data",
+            "description": "Combine Mencoro with the Ahrefs, Semrush, Google Search Console or Google Analytics MCP servers the assistant has connected: outreach targets, demand, ranking without being mentioned, AI referral traffic.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "period",
+                    "required": false
+                }
+            ]
+        },
+        {
             "name": "expand_query_set",
             "title": "Expand the query set",
             "description": "Find new prompts or keywords worth tracking for a project and add the ones the user picks.",
@@ -8609,6 +8870,21 @@
                 {
                     "name": "project",
                     "required": true
+                }
+            ]
+        },
+        {
+            "name": "optimization_opportunities",
+            "title": "Optimization opportunities",
+            "description": "A prioritised list of what to improve for a project, from where competitors win, the sources AI answers cite, sentiment and coverage gaps.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "period",
+                    "required": false
                 }
             ]
         },
@@ -8658,9 +8934,32 @@
             ]
         },
         {
+            "name": "results_review",
+            "title": "Did it work? Review a change",
+            "description": "Evaluate whether a change (new content, PR, a launch, an optimization) moved AI visibility, comparing before and after against a baseline.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "change",
+                    "required": true
+                },
+                {
+                    "name": "date",
+                    "required": true
+                },
+                {
+                    "name": "scope",
+                    "required": false
+                }
+            ]
+        },
+        {
             "name": "set_up_project",
             "title": "Set up a project",
-            "description": "Create a monitored project from a website: brand names, competitors and the first tracked prompts, with the user approving each step.",
+            "description": "Start monitoring a brand from its website in a short conversation: gather what is missing, propose brand names and competitors together, create the project once the user confirms, then propose the first prompts to track.",
             "arguments": [
                 {
                     "name": "website",
@@ -8706,6 +9005,21 @@
                 {
                     "name": "project",
                     "required": true
+                }
+            ]
+        },
+        {
+            "name": "visibility_report",
+            "title": "Visibility report",
+            "description": "A structured AI-visibility report for a project over a period, against the previous period, ending with recommended actions.",
+            "arguments": [
+                {
+                    "name": "project",
+                    "required": true
+                },
+                {
+                    "name": "period",
+                    "required": false
                 }
             ]
         },

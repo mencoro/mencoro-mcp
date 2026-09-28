@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Mencoro",
     "subtitle": "Brand visibility analytics",
-    "description": "Mencoro helps you analyze and manage your brand visibility in AI answers and search results. Explore your projects, compare share of voice and tracked competitors, inspect sentiment, mention examples and cited sources, and track changes over time. With the permissions you grant, it can also set up projects, add competitors and tracked queries, organize keyword clusters, and adjust how often queries are checked. Deleting, archiving, running checks, adding tracked queries and organization changes are previewed first and run only after you confirm.",
+    "description": "Mencoro helps you analyze and manage your brand visibility in AI answers and search results. Explore your projects, compare share of voice and tracked competitors, inspect sentiment, mention examples and cited sources, and track changes over time. With the permissions you grant, it can also set up projects in a short conversation, add competitors and tracked queries, organize keyword clusters, and adjust how often queries are checked. Deleting, archiving, running checks, adding tracked queries and organization changes are previewed first and run only after you confirm. It also answers questions about how Mencoro works and how its metrics are calculated.",
     "category": "BUSINESS"
   },
   "tools": {
@@ -159,9 +159,9 @@
         "openWorldHint": true
       },
       "justifications": {
-        "read_only_justification": "Starts a background job that proposes a project's competitors.",
-        "open_world_justification": "The job queries AI answer engines and search results on the user's behalf to find competing brands.",
-        "destructive_justification": "Creates only the job and its proposal; competitors are added only when the user adds the chosen ones with create_competitor."
+        "read_only_justification": "Starts a background job that proposes other names the project's brand and its existing competitors go by; nothing is added to the project until the user applies chosen names with update_project or update_competitor.",
+        "open_world_justification": "The job queries AI answer engines and search results on the user's behalf to find the names the brand and its competitors appear under.",
+        "destructive_justification": "Creates only the job and its proposal; no brand or competitor name changes until the user applies the chosen ones."
       }
     },
     "discover_keywords": {
@@ -246,6 +246,18 @@
         "read_only_justification": "Returns the status and result of a background job the user started, without starting, restarting or cancelling it.",
         "open_world_justification": "Reads job state stored in Mencoro; any external work belongs to the tool that started the job.",
         "destructive_justification": "Does not cancel the job or change its result, and applies nothing it proposes."
+      }
+    },
+    "get_mencoro_guide": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns sections of Mencoro's public guide (methodology, metrics, plans, usage) and reads no account data.",
+        "open_world_justification": "Serves fixed guide text held by Mencoro; it does not browse the web or call other services.",
+        "destructive_justification": "Changes nothing; it only returns published guide text."
       }
     },
     "get_mention_mix": {
@@ -524,6 +536,18 @@
         "destructive_justification": "Does not delete or modify stored snapshots."
       }
     },
+    "list_untracked_competitors": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Aggregates brands already named in stored AI answers for the project that are not tracked as competitors, without adding any competitor or changing tracked data.",
+        "open_world_justification": "Reads mentions already captured and stored in Mencoro for an accessible project and contacts no external system.",
+        "destructive_justification": "Does not add, remove or modify competitors, mentions or answers."
+      }
+    },
     "preview_operation": {
       "annotations": {
         "readOnlyHint": true,
@@ -747,11 +771,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Set up a project from a website and add tracked queries only after the user confirms the plan.",
-      "user_prompt": "In my first Mencoro organization, create a project for example.com called Example, find its competitors, and propose five AI prompts about project management software in the US to track weekly on ChatGPT. Show me the plan and its cost before adding anything.",
+      "description": "Set up a project in a short conversation, proposing brand names and competitors before creating anything.",
+      "user_prompt": "Set up Mencoro monitoring for notion.so in my first organization, for the US and GB. Propose the brand names and a few competitors first; create the project only after I confirm, then suggest AI prompts to track and show me what they cost before adding them.",
       "file_attachment_urls": null,
-      "tools_triggered": "list_projects, create_project, discover_brands, discover_prompts, get_job, get_usage, preview_operation, create_tracked_queries",
-      "expected_output": "Creates the project, reports the competitors and prompts proposed by completed jobs, previews the tracked-query creation with the number of queries and the checks they spend, and calls create_tracked_queries with the preview token only after the user explicitly agrees.",
+      "tools_triggered": "list_projects, suggest_brand_names, get_job, create_project, discover_prompts, get_usage, preview_operation, create_tracked_queries, list_untracked_competitors",
+      "expected_output": "Shows one proposal (brand names from suggest_brand_names, competitors labelled as the assistant's suggestions with their websites and names) and creates nothing before the user confirms; then creates the project, proposes prompts, previews the tracked-query creation with its checks, creates them only after an explicit yes, and afterwards lists other brands the answers name.",
       "expected_output_url": null
     },
     {
@@ -768,6 +792,14 @@
       "file_attachment_urls": null,
       "tools_triggered": "list_projects, get_project, preview_operation, delete_competitor",
       "expected_output": "Identifies the competitor, previews the deletion including the mentions and results it removes, asks the user to confirm, and calls delete_competitor with the preview token only after an explicit yes; if the user declines, nothing is deleted.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Answer a question about how Mencoro calculates a metric from its public guide.",
+      "user_prompt": "How does Mencoro calculate share of voice, and why can it be empty while coverage is not?",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_mencoro_guide",
+      "expected_output": "Explains the weighting by mention type, tone and qualifier and the formula against tracked competitors, and that share of voice stays empty when no tracked competitor appears in the same answers; uses no account data.",
       "expected_output_url": null
     }
   ],

@@ -21,8 +21,9 @@
 
 Mencoro tracks how brands surface in AI answer engines — ChatGPT, Perplexity, Google AI Overview
 and AI Mode — and in Google Search and Shopping. The MCP server exposes that data to any MCP client,
-and lets it manage projects, tracked queries, clusters and organizations, as **58 tools** (29 that
-read, 29 that change something) and **16 prompts**.
+and lets it manage projects, tracked queries, clusters and organizations, as **60 tools** (31 that
+read, 29 that change something) and **20 prompts**. One of them, `get_mencoro_guide`, answers
+questions about Mencoro itself and works without signing in.
 
 The server is **hosted**. Most clients should connect to it directly:
 
@@ -223,7 +224,7 @@ would otherwise override the token you just configured.
 
 ## Tools
 
-29 tools read and 29 change something. Every tool declares all four MCP annotations
+31 tools read and 29 change something. Every tool declares all four MCP annotations
 (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) explicitly, so a client can
 decide what to ask you before calling it.
 
@@ -262,6 +263,8 @@ Every read tool needs only the `read` scope.
 | `get_tracked_query_matches` | Every mention or ranking behind one tracked query's metrics. |
 | `get_job` | Progress and result of a background job started by a discovery or clustering tool. |
 | `preview_operation` | What a confirmable change would affect and cost, plus the one-time token to run it. |
+| `list_untracked_competitors` | Brands the AI answers name that you do not track yet, most-seen first: the competitors worth adding. |
+| `get_mencoro_guide` | The public Mencoro guide: how checks, mentions and every metric work, plans, reliability, this server, analysis advice, pairing with Ahrefs, Semrush, Search Console or Google Analytics servers. **No credential needed.** |
 
 ### Changing things
 
@@ -292,7 +295,7 @@ the plan described has changed. Creating tools, job starters and confirmable too
 | `start_auto_clustering` | `write` | | Start a job that proposes a clustering. |
 | `apply_auto_clustering` | `write` | | Apply a proposal the user approved. |
 | `suggest_brand_names` | `write` | | Start a job that suggests brand names for a website. |
-| `discover_brands` | `write` | | Start a job that finds a project's competitors. |
+| `discover_brands` | `write` | | Start a job that finds other names a project's brand and its competitors go by. |
 | `discover_keywords` | `write` | | Start a job that proposes search keywords worth tracking. |
 | `discover_prompts` | `write` | | Start a job that proposes AI prompts worth tracking. |
 | `create_organization` | `organization:manage` | C | Create an organization. |
@@ -311,12 +314,13 @@ Dates are ISO `YYYY-MM-DD` and must fall inside the retention window. Positions 
 
 The live definitions — names, descriptions, input and output schemas, annotations — are readable
 without a credential at `https://api.mencoro.com/public/v1/mcp`, a discovery-only mount of the same
-server that answers `initialize`, `ping`, `tools/list` and `prompts/list` and refuses everything
-else. Calling a tool still requires signing in at `https://api.mencoro.com/mcp`.
+server that answers `initialize`, `ping`, `tools/list`, `prompts/list` and the public guide
+(`get_mencoro_guide`), and refuses everything else. Calling any other tool requires signing in at
+`https://api.mencoro.com/mcp`.
 
 ## Prompts
 
-Sixteen ready-made starting points, surfaced by clients that support MCP prompts. Twelve ask about
+Twenty ready-made starting points, surfaced by clients that support MCP prompts. Twelve ask about
 your data:
 
 `brand_ai_overview` · `whats_changed` · `organization_overview` · `top_queries` ·
@@ -327,10 +331,19 @@ Four script a change step by step, stopping for your approval where it matters:
 
 | Prompt | Workflow |
 |---|---|
-| `set_up_project` | Create a project from a website: brand names, competitors and the first tracked prompts. |
+| `set_up_project` | Start monitoring a brand from its website in a short conversation: one proposal with brand names and suggested competitors before anything is created, then the first prompts to track, then the other brands the answers name. |
 | `expand_query_set` | Find new prompts or keywords worth tracking and add the ones you pick. |
 | `reorganise_clusters` | Let Mencoro propose a clustering, review it, and apply it. |
 | `tune_tracking_costs` | Review what each tracked query costs in checks and change frequency, passes or status to fit the plan. |
+
+Four turn the data into decisions:
+
+| Prompt | Analysis |
+|---|---|
+| `visibility_report` | A structured report for a period against the previous one, ending with recommended actions. |
+| `results_review` | Whether a change (content, PR, a launch) moved visibility, before and after against a baseline. |
+| `optimization_opportunities` | A prioritised list of what to improve: where competitors win, sources to be present on, sentiment and coverage gaps. |
+| `cross_source_analysis` | Mencoro together with the Ahrefs, Semrush, Search Console or Google Analytics servers your assistant has connected. Mencoro has no integration with them; the assistant calls each with your own account. |
 
 ## ChatGPT submission and skills
 
@@ -338,19 +351,21 @@ Four script a change step by step, stopping for your approval where it matters:
 tool annotation justifications, and review test cases. Keep its tool descriptions and justifications
 aligned with the hosted server when capabilities change.
 
-Eight optional skills turn the tools into reusable workflows. ChatGPT does not surface MCP prompts,
+Ten optional skills turn the tools into reusable workflows. ChatGPT does not surface MCP prompts,
 so these are how its users get the same guided flows.
 
-Four analyse, and change nothing:
+Six analyse, and change nothing:
 
 - [Visibility report](skills/mencoro-visibility-report/SKILL.md): performance summaries, trends, and query gains or losses.
 - [Competitor analysis](skills/mencoro-competitor-analysis/SKILL.md): share of voice and head-to-head comparisons.
 - [Sentiment review](skills/mencoro-sentiment-review/SKILL.md): sentiment breakdowns with attributed mention excerpts.
 - [Coverage audit](skills/mencoro-coverage-audit/SKILL.md): current monitoring coverage and stale queries.
+- [Results review](skills/mencoro-results-review/SKILL.md): whether a change moved AI visibility, before and after against a baseline.
+- [Optimization insights](skills/mencoro-optimization-insights/SKILL.md): a prioritised list of what to improve, optionally with connected Ahrefs, Semrush, Search Console or Google Analytics tools.
 
 Four make changes, each only after the user approves it, and need the `write` scope:
 
-- [Project setup](skills/mencoro-project-setup/SKILL.md): a monitored project from a website, with brand names, competitors and the first tracked prompts.
+- [Project setup](skills/mencoro-project-setup/SKILL.md): a monitored project from a website in a short conversation, with brand names and suggested competitors proposed before anything is created.
 - [Query expansion](skills/mencoro-query-expansion/SKILL.md): new prompts or keywords worth tracking, added as the user picks them.
 - [Cluster reorganisation](skills/mencoro-cluster-reorganisation/SKILL.md): a proposed clustering, reviewed and applied.
 - [Cost tuning](skills/mencoro-cost-tuning/SKILL.md): frequency, pass and pause changes that bring check spend within the plan.
@@ -386,7 +401,7 @@ docker run --rm -i -e MENCORO_API_KEY=mcp_pat_your_token ghcr.io/mencoro/mencoro
 
 | | |
 |---|---|
-| `MENCORO_API_KEY` | Personal access token. Without it the bridge still starts and still advertises the full catalogue, but every tool answers with setup instructions instead of data. |
+| `MENCORO_API_KEY` | Personal access token. Without it the bridge still starts and still advertises the full catalogue; `get_mencoro_guide` answers from the public guide, and every other tool answers with setup instructions instead of data. |
 | `MENCORO_MCP_URL` | Upstream endpoint. Defaults to `https://api.mencoro.com/mcp`. |
 | `--url <url>` | Same, as an argument. |
 | `--header "Name: value"` | Extra HTTP header, repeatable. An `Authorization` header here overrides `MENCORO_API_KEY`. |
@@ -408,7 +423,9 @@ The bridge starts anyway, serving [`catalog.json`](catalog.json) — a committed
 hosted server advertises — plus a `mencoro_setup` tool. So `npx -y @mencoro/mcp` introspects to the
 same tools and prompts a credentialed run does, and anything that scans the package sees a
 real catalogue rather than a server that looks empty. Calling one of those tools returns the setup
-instructions as an error; it never returns invented data.
+instructions as an error; it never returns invented data. The exception is `get_mencoro_guide`, which
+reads only published material: the bridge forwards it to the hosted server's anonymous endpoint and
+returns the real answer.
 
 `npm run sync:catalog` refreshes the file from the anonymous catalogue endpoint, and
 `npm run check:catalog` fails if the committed copy has fallen behind. A scheduled workflow runs
@@ -436,7 +453,7 @@ pull request here would notice it drifting.
 | `server.json` | The [MCP registry](https://registry.modelcontextprotocol.io) manifest. |
 | `glama.json` | Glama directory ownership metadata. |
 | `chatgpt-app-submission.json` | ChatGPT app submission metadata and tool justifications. |
-| `skills/` | Eight reusable Mencoro workflows for ChatGPT: four analyses and four guided changes. |
+| `skills/` | Ten reusable Mencoro workflows for ChatGPT: six analyses and four guided changes. |
 | `Dockerfile` | The image published to `ghcr.io/mencoro/mencoro-mcp`. |
 | `assets/`, `logo.png` | Brand assets used by directory listings. |
 
