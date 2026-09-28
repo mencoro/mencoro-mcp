@@ -7,6 +7,6 @@ dependencies:
   tools:
     - type: "mcp"
       value: "mencoro"
-      description: "Read-only Mencoro brand-monitoring analytics"
+      description: "Mencoro brand-monitoring analytics; this skill uses read tools only"
       transport: "streamable_http"
       url: "https://api.mencoro.com/mcp"

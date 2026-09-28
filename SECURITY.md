@@ -39,7 +39,14 @@ process are not.
 
 ## Token properties
 
-Mencoro personal access tokens are read-only (`mcp_pat_…`), can be scoped to a
-single organization, can be given an expiry, and can be revoked at any time
-from the **MCP server** page of your Mencoro account (`https://tool.mencoro.com/me/mcp-server`). Revoking a token takes effect
-immediately. Nothing this package exposes can modify Mencoro data.
+Mencoro personal access tokens (`mcp_pat_…`) carry the permissions chosen when
+they were created — `read` always, plus optionally `write` and
+`organization:manage` — and never act beyond the owner's own role. They can be
+pinned to a single organization, given an expiry, and revoked at any time from
+the **MCP server** page of your Mencoro account (`https://tool.mencoro.com/me/mcp-server`). Revoking a token takes effect
+immediately. A token without `write` cannot modify Mencoro data; with it, deleting,
+archiving, running checks, adding tracked queries and changing an organization
+still require a confirmation the server issues after a preview.
+
+This package holds no permissions of its own: it forwards the token it is given,
+so it can do exactly what that token can do.

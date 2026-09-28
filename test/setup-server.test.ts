@@ -186,7 +186,14 @@ describe('the shipped catalogue', () => {
       assert.ok((tool.description ?? '').length >= 40, `${tool.name} has no usable description`);
       assert.ok(tool.title !== undefined && tool.title !== '', `${tool.name} has no title`);
       assert.equal(tool.inputSchema.type, 'object', `${tool.name} has no object input schema`);
-      assert.equal(tool.annotations?.readOnlyHint, true, `${tool.name} is not marked read-only`);
+      // Directories grade, and ChatGPT review requires, an explicit value for every hint rather
+      // than the protocol defaults, which assume a destructive, open-world tool.
+      for (const hint of ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'] as const) {
+        assert.equal(typeof tool.annotations?.[hint], 'boolean', `${tool.name} does not declare ${hint}`);
+      }
+      if (tool.annotations?.readOnlyHint === true) {
+        assert.equal(tool.annotations.destructiveHint, false, `${tool.name} is read-only yet destructive`);
+      }
     }
   });
 });

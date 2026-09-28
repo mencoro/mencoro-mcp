@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Project Setup"
+  short_description: "Start monitoring a brand from its website"
+  default_prompt: "Use $mencoro-project-setup to set up Mencoro monitoring for my brand's website."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Mencoro brand monitoring; this skill creates projects, competitors and tracked queries and needs the write permission"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"

@@ -5,7 +5,7 @@
 <h1 align="center">Mencoro MCP server</h1>
 
 <p align="center">
-  Ask an AI assistant how your brand is doing in AI answers — rank, mentions, sentiment and Share of Voice — in plain language.
+  Ask an AI assistant how your brand is doing in AI answers — rank, mentions, sentiment and Share of Voice — and have it set up and tune your monitoring, in plain language.
 </p>
 
 <p align="center">
@@ -20,8 +20,9 @@
 ---
 
 Mencoro tracks how brands surface in AI answer engines — ChatGPT, Perplexity, Google AI Overview
-and AI Mode — and in Google Search and Shopping. The MCP server exposes that data to any MCP client
-as **17 read-only tools** and **12 prompts**.
+and AI Mode — and in Google Search and Shopping. The MCP server exposes that data to any MCP client,
+and lets it manage projects, tracked queries, clusters and organizations, as **58 tools** (29 that
+read, 29 that change something) and **16 prompts**.
 
 The server is **hosted**. Most clients should connect to it directly:
 
@@ -78,18 +79,34 @@ output and does not have to survive the host's argument splitting.
 
 ## Authentication
 
-Two ways in. Both give the same read-only access.
+Two ways in. Both carry the same three permissions, and neither can ever do more than your own
+role in an organization allows:
+
+| Scope | Allows |
+|---|---|
+| `read` | Every read tool. Always granted. |
+| `write` | Creating, changing and deleting projects, competitors, clusters and tracked queries; running checks; starting discovery jobs. |
+| `organization:manage` | Creating, renaming, archiving and restoring organizations; invitations; members' roles and suspension. |
 
 **OAuth 2.1** — the one-click path. Supported by Claude, ChatGPT, Claude Code and any client that
 implements the MCP authorization spec. Nothing to copy or paste; revoke it from the app.
+The consent screen pre-selects the scopes the client asked for (all three when it asked for none),
+and you can untick any but `read`.
 The server advertises PKCE (`S256`), Client ID Metadata Documents, Dynamic Client Registration and
 RFC 9728 resource metadata, so clients discover everything they need from
-`https://api.mencoro.com/.well-known/oauth-protected-resource/mcp`.
+`https://api.mencoro.com/.well-known/oauth-protected-resource/mcp`. Calling a tool the connection
+lacks the scope for answers `403 insufficient_scope` naming the scopes to request, so a client
+that supports step-up authorization asks you to reconnect with the extra permission.
 
 **Personal access token** — for CLI clients, config files, and this bridge. Create one at
 [tool.mencoro.com/me/mcp-server](https://tool.mencoro.com/me/mcp-server); it is shown once, starts
-with `mcp_pat_`, is read-only, and can be scoped to a single organization and given an expiry.
-Send it as `Authorization: Bearer mcp_pat_…`.
+with `mcp_pat_`, carries the permissions you tick (all three by default), and can be pinned to a
+single organization and given an expiry. Send it as `Authorization: Bearer mcp_pat_…`. A call the
+token lacks the permission for fails with a tool error naming it; a token cannot be upgraded, so
+create a new one to add a permission.
+
+Connections and tokens created before write access existed have `read` and `write` but not
+`organization:manage`.
 
 > ChatGPT cannot send a custom `Authorization` header to a remote connector — use OAuth there.
 
@@ -206,27 +223,88 @@ would otherwise override the token you just configured.
 
 ## Tools
 
-All 17 are read-only. Nothing in this server can change a project, a tracked query or a setting.
+29 tools read and 29 change something. Every tool declares all four MCP annotations
+(`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) explicitly, so a client can
+decide what to ask you before calling it.
+
+### Reading
+
+Every read tool needs only the `read` scope.
 
 | Tool | What it answers |
 |---|---|
 | `list_projects` | The organizations and active projects you can see. **Call this first** — every other tool needs the ids it returns. |
+| `get_project` | One project's status, website domains, brand names and competitors with their ids. |
+| `list_clusters` | A project's keyword clusters, by name, with their ids. |
 | `get_available_filters` | Which engines, countries, keyword clusters and competitors a project actually has. |
 | `get_metric_glossary` | Maps everyday wording ("visibility", "tone", "ranking") onto the right metric and tool. |
 | `get_organization_overview` | Current-state board across every active project in an organization, ranked by Share of Voice. |
+| `get_organization` | An organization's profile, status, your role in it, and its member, project and invitation counts. |
+| `list_members` | An organization's members with their role and state, optionally with pending invitations. Owners only. |
+| `get_usage` | The subscription, tracked-query count and projected monthly checks, against the plan's limits. |
 | `get_project_rank_tracking_stats` | The project summary: positions, trends, Share of Voice per competitor, sentiment split, mention/SERP/shopping rates. |
 | `get_rank_tracking_time_series` | Those metrics over time, bucketed daily, weekly or monthly, optionally per competitor. |
 | `get_tracked_query_time_series` | The same history for one tracked query. |
 | `get_query_movers` | The tracked queries that gained or lost the most versus the previous period. |
 | `get_cluster_breakdown` | The same metrics broken down per keyword cluster. |
 | `search_tracked_queries` | Search and paginate a project's tracked queries with their latest positions. |
+| `get_tracked_query` | One tracked query's settings: text, engine, country, status, frequency, passes, clusters and last check. |
+| `list_keyword_listings` | One row per query text across its engine and country variants, with every metric, sortable. |
+| `get_tracking_coverage` | What is stale: paused, never-checked and overdue tracked queries. |
 | `get_sentiment_breakdown` | Positive / neutral / negative split of your AI mentions, per engine and per competitor. |
 | `get_mention_mix` | Mention counts by type, tone and qualifier — the inputs behind the Share of Voice weighting. |
 | `get_mention_samples` | The raw AI mention texts, paginated and filterable, for qualitative review. |
+| `get_share_of_voice_formula` | The weights and multipliers the Share of Voice score is built from. |
 | `get_competitor_cooccurrence` | Head-to-head: when you and a competitor appear in the same answer, who is named higher. |
 | `get_cited_sources` | The domains and pages the answer engines cited, with counts and average citation rank. |
-| `get_tracking_coverage` | What is stale: paused, never-checked and overdue tracked queries. |
-| `get_share_of_voice_formula` | The weights and multipliers the Share of Voice score is built from. |
+| `list_ai_responses` | The captured AI answers themselves: full text, engine, capture time and cited sources. |
+| `list_search_snapshots` | The captured Google Search and Shopping result pages. |
+| `get_tracked_query_matches` | Every mention or ranking behind one tracked query's metrics. |
+| `get_job` | Progress and result of a background job started by a discovery or clustering tool. |
+| `preview_operation` | What a confirmable change would affect and cost, plus the one-time token to run it. |
+
+### Changing things
+
+A tool marked **C** needs a confirmation: call `preview_operation` with the tool's name and
+arguments, show the plan to the user, and call the tool with the returned `confirmationToken` only
+after they agree. The token is single-use, expires after a few minutes, and is refused if anything
+the plan described has changed. Creating tools, job starters and confirmable tools also accept a
+`requestId`: a retry with the same one returns the first result instead of doing the work twice.
+
+| Tool | Scope | | What it does |
+|---|---|---|---|
+| `create_project` | `write` | | Create a project from brand names and domains. |
+| `update_project` | `write` | | Rename a project, or replace its website domains and brand names. |
+| `archive_project` | `write` | C | Archive a project; its tracked queries stop being checked. |
+| `restore_project` | `write` | | Bring an archived project back. |
+| `create_competitor` | `write` | | Add a competitor to a project. |
+| `update_competitor` | `write` | | Replace a competitor's name, website domains and brand names. |
+| `delete_competitor` | `write` | C | Remove a competitor with every mention and search or shopping result recorded for it. |
+| `create_tracked_queries` | `write` | C | Add tracked queries in bulk across engines and countries; the preview shows the checks they will spend. |
+| `update_tracked_queries` | `write` | | Pause, resume, or change the frequency or passes of up to 100 tracked queries. |
+| `delete_tracked_queries` | `write` | C | Delete up to 100 tracked queries with their captured answers, matches and history. |
+| `run_checks` | `write` | C | Check tracked queries now, spending budget. |
+| `report_ai_response` | `write` | | Flag a captured AI answer that was analysed wrong. |
+| `create_clusters` | `write` | | Create keyword clusters. |
+| `rename_cluster` | `write` | | Rename a cluster. |
+| `delete_cluster` | `write` | C | Delete a cluster; its tracked queries stay. |
+| `set_tracked_query_clusters` | `write` | | Add tracked queries to clusters, or remove them. |
+| `start_auto_clustering` | `write` | | Start a job that proposes a clustering. |
+| `apply_auto_clustering` | `write` | | Apply a proposal the user approved. |
+| `suggest_brand_names` | `write` | | Start a job that suggests brand names for a website. |
+| `discover_brands` | `write` | | Start a job that finds a project's competitors. |
+| `discover_keywords` | `write` | | Start a job that proposes search keywords worth tracking. |
+| `discover_prompts` | `write` | | Start a job that proposes AI prompts worth tracking. |
+| `create_organization` | `organization:manage` | C | Create an organization. |
+| `update_organization` | `organization:manage` | C | Change an organization's name, description or contact email. |
+| `archive_organization` | `organization:manage` | C | Archive an organization. |
+| `restore_organization` | `organization:manage` | C | Restore an archived organization. |
+| `invite_member` | `organization:manage` | C | Invite someone by email with a role. |
+| `cancel_invitation` | `organization:manage` | C | Cancel a pending invitation. |
+| `update_member` | `organization:manage` | C | Change a member's role, or suspend or reactivate them. |
+
+A change is refused exactly where the Mencoro app refuses it: your role in the organization, an
+archived project, or a missing subscription where the app requires one.
 
 Dates are ISO `YYYY-MM-DD` and must fall inside the retention window. Positions are
 1-based and **lower is better**; every other metric improves as it rises.
@@ -238,11 +316,21 @@ else. Calling a tool still requires signing in at `https://api.mencoro.com/mcp`.
 
 ## Prompts
 
-Twelve ready-made questions, surfaced by clients that support MCP prompts:
+Sixteen ready-made starting points, surfaced by clients that support MCP prompts. Twelve ask about
+your data:
 
 `brand_ai_overview` · `whats_changed` · `organization_overview` · `top_queries` ·
 `biggest_movers` · `query_history` · `competitor_standing` · `head_to_head` ·
 `negative_mentions` · `cited_sources` · `coverage_health` · `sov_explainer`
+
+Four script a change step by step, stopping for your approval where it matters:
+
+| Prompt | Workflow |
+|---|---|
+| `set_up_project` | Create a project from a website: brand names, competitors and the first tracked prompts. |
+| `expand_query_set` | Find new prompts or keywords worth tracking and add the ones you pick. |
+| `reorganise_clusters` | Let Mencoro propose a clustering, review it, and apply it. |
+| `tune_tracking_costs` | Review what each tracked query costs in checks and change frequency, passes or status to fit the plan. |
 
 ## ChatGPT submission and skills
 
@@ -250,12 +338,22 @@ Twelve ready-made questions, surfaced by clients that support MCP prompts:
 tool annotation justifications, and review test cases. Keep its tool descriptions and justifications
 aligned with the hosted server when capabilities change.
 
-Four optional skills turn the existing read-only tools into reusable workflows:
+Eight optional skills turn the tools into reusable workflows. ChatGPT does not surface MCP prompts,
+so these are how its users get the same guided flows.
+
+Four analyse, and change nothing:
 
 - [Visibility report](skills/mencoro-visibility-report/SKILL.md): performance summaries, trends, and query gains or losses.
 - [Competitor analysis](skills/mencoro-competitor-analysis/SKILL.md): share of voice and head-to-head comparisons.
 - [Sentiment review](skills/mencoro-sentiment-review/SKILL.md): sentiment breakdowns with attributed mention excerpts.
 - [Coverage audit](skills/mencoro-coverage-audit/SKILL.md): current monitoring coverage and stale queries.
+
+Four make changes, each only after the user approves it, and need the `write` scope:
+
+- [Project setup](skills/mencoro-project-setup/SKILL.md): a monitored project from a website, with brand names, competitors and the first tracked prompts.
+- [Query expansion](skills/mencoro-query-expansion/SKILL.md): new prompts or keywords worth tracking, added as the user picks them.
+- [Cluster reorganisation](skills/mencoro-cluster-reorganisation/SKILL.md): a proposed clustering, reviewed and applied.
+- [Cost tuning](skills/mencoro-cost-tuning/SKILL.md): frequency, pass and pause changes that bring check spend within the plan.
 
 In the submission portal's **Skills** step, upload each skill folder under `skills/`, or a ZIP
 containing that folder. Include both `SKILL.md` and `agents/openai.yaml`; the latter declares the
@@ -308,7 +406,7 @@ anything added later all pass straight through.
 
 The bridge starts anyway, serving [`catalog.json`](catalog.json) — a committed copy of what the
 hosted server advertises — plus a `mencoro_setup` tool. So `npx -y @mencoro/mcp` introspects to the
-same 17 tools and 12 prompts a credentialed run does, and anything that scans the package sees a
+same tools and prompts a credentialed run does, and anything that scans the package sees a
 real catalogue rather than a server that looks empty. Calling one of those tools returns the setup
 instructions as an error; it never returns invented data.
 
@@ -321,7 +419,8 @@ pull request here would notice it drifting.
 
 | | |
 |---|---|
-| Access | Read-only. 17 tools, no mutations. |
+| Access | `read` always; `write` and `organization:manage` only when granted, and never beyond your own role. Confirmable changes run only with a token from `preview_operation`. |
+| Batches | Tools that act on tracked queries or clusters by id take at most 100 per call (500 for `start_auto_clustering`); each tool's input schema states its limits. |
 | Retention | Up to 16 months of history; dates outside the window are rejected. |
 | Transport | Streamable HTTP. |
 | Rate limiting | Repeatedly presenting an invalid credential is rate limited per IP. |
@@ -337,7 +436,7 @@ pull request here would notice it drifting.
 | `server.json` | The [MCP registry](https://registry.modelcontextprotocol.io) manifest. |
 | `glama.json` | Glama directory ownership metadata. |
 | `chatgpt-app-submission.json` | ChatGPT app submission metadata and tool justifications. |
-| `skills/` | Four reusable Mencoro analysis workflows for ChatGPT. |
+| `skills/` | Eight reusable Mencoro workflows for ChatGPT: four analyses and four guided changes. |
 | `Dockerfile` | The image published to `ghcr.io/mencoro/mencoro-mcp`. |
 | `assets/`, `logo.png` | Brand assets used by directory listings. |
 

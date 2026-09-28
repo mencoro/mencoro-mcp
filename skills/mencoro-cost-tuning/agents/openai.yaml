@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Cost Tuning"
+  short_description: "Fit tracked-query check spend to the plan"
+  default_prompt: "Use $mencoro-cost-tuning to review and reduce my Mencoro project's check spend."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Mencoro brand monitoring; this skill changes check frequency, passes and pauses and needs the write permission"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"

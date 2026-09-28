@@ -4,10 +4,190 @@
   "app_info": {
     "display_name": "Mencoro",
     "subtitle": "Brand visibility analytics",
-    "description": "Mencoro helps you analyze your brand visibility in AI answers and search results using monitoring data already stored in your account. Explore accessible projects, compare share of voice and tracked competitors, inspect sentiment and mention examples, review cited sources, and track changes over time. The connector provides read-only analytics and does not create monitoring queries, run new checks, or change project settings.",
+    "description": "Mencoro helps you analyze and manage your brand visibility in AI answers and search results. Explore your projects, compare share of voice and tracked competitors, inspect sentiment, mention examples and cited sources, and track changes over time. With the permissions you grant, it can also set up projects, add competitors and tracked queries, organize keyword clusters, and adjust how often queries are checked. Deleting, archiving, running checks, adding tracked queries and organization changes are previewed first and run only after you confirm.",
     "category": "BUSINESS"
   },
   "tools": {
+    "apply_auto_clustering": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Applies a reviewed clustering proposal: creates the clusters it names and moves tracked queries into them.",
+        "open_world_justification": "Changes only clusters and memberships in Mencoro and contacts no external system.",
+        "destructive_justification": "Creates clusters and changes memberships as the reviewed job's mode said, without deleting any tracked query; a retried call with the same requestId applies once."
+      }
+    },
+    "archive_organization": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Archives an organization.",
+        "open_world_justification": "Changes only the organization's status in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive because it stops the organization's monitoring and access for its members; it keeps all data, restore_organization reverses it, and it runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "archive_project": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Archives a project so its tracked queries stop being checked and it leaves the project list.",
+        "open_world_justification": "Changes only the project's status in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive because it stops monitoring and hides the project; it runs only with a confirmation token from a preview the user approved, keeps all history, and restore_project reverses it."
+      }
+    },
+    "cancel_invitation": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Cancels a pending invitation.",
+        "open_world_justification": "Changes only the invitation's state in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive because the invitation link stops working and a new invitation is needed; it runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "create_clusters": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates keyword clusters in a project.",
+        "open_world_justification": "Writes only to the user's Mencoro project and contacts no external system.",
+        "destructive_justification": "Adds clusters without changing existing ones or any tracked query."
+      }
+    },
+    "create_competitor": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Adds a competitor with its domains and brand names to a project.",
+        "open_world_justification": "Writes only to the user's Mencoro project and contacts no external system.",
+        "destructive_justification": "Adds a record without deleting or overwriting existing data; a retried call with the same requestId returns the first result."
+      }
+    },
+    "create_organization": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new organization owned by the user.",
+        "open_world_justification": "Writes only to Mencoro and contacts no external system.",
+        "destructive_justification": "Adds an organization without changing existing ones; it runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "create_project": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new monitored project with the given domains, brand names and competitors in the user's organization.",
+        "open_world_justification": "Writes only to the user's Mencoro organization; creating a project runs no check and contacts no external system.",
+        "destructive_justification": "Adds a project without deleting or overwriting existing data; a retried call with the same requestId returns the first result."
+      }
+    },
+    "create_tracked_queries": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Creates tracked queries for every combination of the given texts, engines and countries, and schedules their checks.",
+        "open_world_justification": "Each new tracked query is checked immediately and then on its schedule, which sends prompts to AI engines and queries Google on the user's behalf and spends check budget.",
+        "destructive_justification": "Adds queries without deleting or overwriting existing ones; combinations already tracked are skipped. It runs only with a confirmation token from a preview showing the checks it will spend."
+      }
+    },
+    "delete_cluster": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Deletes a keyword cluster.",
+        "open_world_justification": "Deletes a record stored in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive because the cluster cannot be recovered; its tracked queries are kept and only leave it. It runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "delete_competitor": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Removes a competitor from a project.",
+        "open_world_justification": "Deletes records stored in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive and irreversible: it removes every mention and search or shopping result recorded for the competitor. It runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "delete_tracked_queries": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Deletes up to 100 tracked queries.",
+        "open_world_justification": "Deletes records stored in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive and irreversible: it removes the queries with their captured answers, matches and metrics history. It runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "discover_brands": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background job that proposes a project's competitors.",
+        "open_world_justification": "The job queries AI answer engines and search results on the user's behalf to find competing brands.",
+        "destructive_justification": "Creates only the job and its proposal; competitors are added only when the user adds the chosen ones with create_competitor."
+      }
+    },
+    "discover_keywords": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background job that proposes search keywords worth tracking.",
+        "open_world_justification": "The job queries search engines and AI providers on the user's behalf to find keywords about the topic.",
+        "destructive_justification": "Creates only the job and its proposal; nothing is tracked until the user adds the chosen keywords with create_tracked_queries."
+      }
+    },
+    "discover_prompts": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background job that proposes AI prompts worth tracking.",
+        "open_world_justification": "The job queries AI providers on the user's behalf to find the questions people ask about the topic.",
+        "destructive_justification": "Creates only the job and its proposal; nothing is tracked until the user adds the chosen prompts with create_tracked_queries."
+      }
+    },
     "get_available_filters": {
       "annotations": {
         "readOnlyHint": true,
@@ -56,6 +236,18 @@
         "destructive_justification": "Does not delete competitor records, overwrite mention positions, or modify stored AI responses."
       }
     },
+    "get_job": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the status and result of a background job the user started, without starting, restarting or cancelling it.",
+        "open_world_justification": "Reads job state stored in Mencoro; any external work belongs to the tool that started the job.",
+        "destructive_justification": "Does not cancel the job or change its result, and applies nothing it proposes."
+      }
+    },
     "get_mention_mix": {
       "annotations": {
         "readOnlyHint": true,
@@ -92,6 +284,18 @@
         "destructive_justification": "Does not edit or remove metric definitions, project data, account settings, or access permissions."
       }
     },
+    "get_organization": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns an organization's profile, status, the caller's role and member, project and invitation counts without changing them.",
+        "open_world_justification": "Reads organization records stored in Mencoro that the user belongs to and contacts no external system.",
+        "destructive_justification": "Does not archive, rename or otherwise alter the organization or its memberships."
+      }
+    },
     "get_organization_overview": {
       "annotations": {
         "readOnlyHint": true,
@@ -102,6 +306,18 @@
         "read_only_justification": "Summarizes existing latest-snapshot metrics across active projects in an authorized organization without modifying projects, metrics, or organization settings.",
         "open_world_justification": "Reads only active-project snapshots within the authorized Mencoro organization and does not query external AI engines or public internet resources.",
         "destructive_justification": "Does not delete or modify projects, overwrite their metrics, revoke memberships, or change organization settings."
+      }
+    },
+    "get_project": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one project's name, status, monitored domains, brand names and competitors without changing any of them.",
+        "open_world_justification": "Reads project configuration stored in Mencoro for a project the user can access and contacts no external system.",
+        "destructive_justification": "Does not delete or alter the project, its competitors or its tracked queries."
       }
     },
     "get_project_rank_tracking_stats": {
@@ -164,6 +380,30 @@
         "destructive_justification": "Does not overwrite weighting constants, delete monitoring results, or alter project scores."
       }
     },
+    "get_tracked_query": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one tracked query's settings and last check time without changing its schedule or status.",
+        "open_world_justification": "Reads a tracked query stored in Mencoro for an accessible project and runs no new check against AI engines or search.",
+        "destructive_justification": "Does not pause, delete or reschedule the tracked query."
+      }
+    },
+    "get_tracked_query_matches": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the stored mentions and search rankings behind one tracked query's metrics without modifying them.",
+        "open_world_justification": "Reads results already captured and stored in Mencoro and does not send prompts to AI providers or query search engines.",
+        "destructive_justification": "Does not delete or relabel matches or alter stored answers."
+      }
+    },
     "get_tracked_query_time_series": {
       "annotations": {
         "readOnlyHint": true,
@@ -188,6 +428,78 @@
         "destructive_justification": "Does not delete queries, change their active or paused status, alter schedules, or cancel monitoring jobs."
       }
     },
+    "get_usage": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reports the subscription, tracked-query count and projected monthly checks without changing the plan or any tracked query.",
+        "open_world_justification": "Reads subscription and usage data stored in Mencoro and does not contact the billing provider or any external system.",
+        "destructive_justification": "Does not change the subscription, its limits or any tracked query."
+      }
+    },
+    "invite_member": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Creates an invitation for an email address to join the organization with a role.",
+        "open_world_justification": "Sends an invitation email to the address the user supplies, who may be outside Mencoro.",
+        "destructive_justification": "Adds a pending invitation without changing existing members; an address that already belongs to a member creates nothing. It runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "list_ai_responses": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists AI answers already captured for a project's tracked queries without triggering new captures or changing them.",
+        "open_world_justification": "Reads answer texts and citations already stored in Mencoro and never sends prompts to AI providers or visits cited pages.",
+        "destructive_justification": "Does not delete, edit or re-analyse stored answers."
+      }
+    },
+    "list_clusters": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists a project's existing keyword clusters and their ids without creating, renaming or deleting any.",
+        "open_world_justification": "Reads cluster records stored in Mencoro for an accessible project and contacts no external system.",
+        "destructive_justification": "Does not delete clusters or change which tracked queries belong to them."
+      }
+    },
+    "list_keyword_listings": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Aggregates stored metrics per query text across engines and countries over a date range without changing any tracked query.",
+        "open_world_justification": "Reads metrics already computed and stored in Mencoro and contacts no external system.",
+        "destructive_justification": "Does not delete, pause or reschedule tracked queries or alter their metrics."
+      }
+    },
+    "list_members": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists an organization's members, their roles and states, and optionally pending invitations, without changing any membership.",
+        "open_world_justification": "Reads membership records stored in Mencoro for an organization the user owns and contacts no external system or person.",
+        "destructive_justification": "Does not remove, suspend or change the role of any member, or cancel invitations."
+      }
+    },
     "list_projects": {
       "annotations": {
         "readOnlyHint": true,
@@ -200,6 +512,90 @@
         "destructive_justification": "Does not delete projects or organizations, change memberships, revoke access, or alter account settings."
       }
     },
+    "list_search_snapshots": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists Google Search and Shopping result pages already captured for a project without triggering new captures.",
+        "open_world_justification": "Reads snapshots already stored in Mencoro and never queries Google or visits the listed pages.",
+        "destructive_justification": "Does not delete or modify stored snapshots."
+      }
+    },
+    "preview_operation": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Describes what a confirmable change would do and issues a one-time confirmation token, without performing the change.",
+        "open_world_justification": "Evaluates the change against data stored in Mencoro and contacts no external system.",
+        "destructive_justification": "Performs no change: the described operation runs only if the matching tool is later called with the token."
+      }
+    },
+    "rename_cluster": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Renames a keyword cluster.",
+        "open_world_justification": "Changes only the cluster's name in Mencoro and contacts no external system.",
+        "destructive_justification": "Keeps the cluster and its members; repeating the call leaves the same state."
+      }
+    },
+    "report_ai_response": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Records a report that a captured AI answer was analysed wrongly, for Mencoro to review.",
+        "open_world_justification": "Writes a report inside Mencoro and contacts no external system.",
+        "destructive_justification": "Adds a report without changing the answer, its analysis or any metric."
+      }
+    },
+    "restore_organization": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Restores an archived organization.",
+        "open_world_justification": "Changes only the organization's status in Mencoro and contacts no external system.",
+        "destructive_justification": "Reverses an archive and deletes nothing; it runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "restore_project": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Restores an archived project so its tracked queries resume on their schedules.",
+        "open_world_justification": "Changes only the project's status in Mencoro; resumed checks run later on the normal schedule, not as part of this call.",
+        "destructive_justification": "Reverses an archive and deletes nothing; repeating it leaves the same state."
+      }
+    },
+    "run_checks": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Runs checks for the chosen tracked queries now instead of waiting for their schedule, spending check budget.",
+        "open_world_justification": "Each check sends the tracked query to AI engines or Google on the user's behalf and stores the answers it captures.",
+        "destructive_justification": "Adds newly captured results and overwrites nothing; it runs only with a confirmation token from a preview showing which checks run and what they cost."
+      }
+    },
     "search_tracked_queries": {
       "annotations": {
         "readOnlyHint": true,
@@ -210,6 +606,102 @@
         "read_only_justification": "Searches, filters, sorts, and paginates existing tracked queries and their latest stored metrics without creating, editing, pausing, resuming, or executing queries.",
         "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
         "destructive_justification": "Does not delete tracked queries, overwrite their configuration or metrics, or change their active or paused status."
+      }
+    },
+    "set_tracked_query_clusters": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Adds tracked queries to clusters or removes them from clusters.",
+        "open_world_justification": "Changes only cluster memberships in Mencoro and contacts no external system.",
+        "destructive_justification": "Deletes no query or cluster; memberships can be changed back, and repeating the call leaves the same state."
+      }
+    },
+    "start_auto_clustering": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background job that proposes a grouping of tracked queries into clusters; the job itself changes no cluster.",
+        "open_world_justification": "Processes only the project's own query texts with a language model to group them; it does not search the web, query AI answer engines or visit websites.",
+        "destructive_justification": "Changes nothing until apply_auto_clustering is called with the result after the user reviews it."
+      }
+    },
+    "suggest_brand_names": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background job that proposes the brand names to monitor for a website.",
+        "open_world_justification": "The job searches the web through an AI provider on the user's behalf to find the names the brand is known by.",
+        "destructive_justification": "Creates only the job and its proposal; no project or brand name changes until the user creates or updates a project with them."
+      }
+    },
+    "update_competitor": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Replaces a competitor's name, domains and brand names.",
+        "open_world_justification": "Changes only the competitor's configuration in Mencoro and contacts no external system.",
+        "destructive_justification": "Replaces the values the user supplies but deletes no results; repeating the call leaves the same state."
+      }
+    },
+    "update_member": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Changes a member's role, or suspends or reactivates them.",
+        "open_world_justification": "Changes only the membership in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive because suspending or demoting removes a person's access; every change can be reversed with another call, and it runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "update_organization": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Changes an organization's name, description or contact email.",
+        "open_world_justification": "Changes only the organization's profile in Mencoro and contacts no external system.",
+        "destructive_justification": "Replaces only the fields supplied and deletes nothing; it runs only with a confirmation token from a preview the user approved."
+      }
+    },
+    "update_project": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Renames a project or replaces the domains and brand names it is monitored for.",
+        "open_world_justification": "Changes only the project's configuration in Mencoro and contacts no external system.",
+        "destructive_justification": "Replaces configuration values the user supplies but deletes no project, tracked query or collected result; repeating the call leaves the same state."
+      }
+    },
+    "update_tracked_queries": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Pauses, resumes, or changes the check frequency or passes of up to 100 tracked queries.",
+        "open_world_justification": "Changes only tracked-query settings in Mencoro; resumed or rescheduled checks run later on the normal schedule, not as part of this call.",
+        "destructive_justification": "Deletes no query or history, and pausing is reversible with resume; repeating the call leaves the same state."
       }
     }
   },
@@ -253,15 +745,39 @@
       "tools_triggered": "list_projects, search_tracked_queries, get_query_movers, get_tracked_query_time_series, get_metric_glossary, get_share_of_voice_formula",
       "expected_output": "Returns at most 10 existing queries, gains and losses using the supported sort directions, the selected query history, and the metric definition and formula constants; handles an empty project without inventing a query.",
       "expected_output_url": null
+    },
+    {
+      "description": "Set up a project from a website and add tracked queries only after the user confirms the plan.",
+      "user_prompt": "In my first Mencoro organization, create a project for example.com called Example, find its competitors, and propose five AI prompts about project management software in the US to track weekly on ChatGPT. Show me the plan and its cost before adding anything.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, create_project, discover_brands, discover_prompts, get_job, get_usage, preview_operation, create_tracked_queries",
+      "expected_output": "Creates the project, reports the competitors and prompts proposed by completed jobs, previews the tracked-query creation with the number of queries and the checks they spend, and calls create_tracked_queries with the preview token only after the user explicitly agrees.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Lower check spend by changing check frequency for the queries the user approves.",
+      "user_prompt": "My first Mencoro project uses too many checks. Show projected monthly checks, suggest which tracked queries could be checked weekly instead of daily, and apply the change only to the ones I approve.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_usage, search_tracked_queries, update_tracked_queries",
+      "expected_output": "Reports current projected monthly checks, proposes specific queries with the checks each change saves, changes frequency only for the approved queries, and reports any that could not be changed.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Delete a competitor only after previewing the consequences and receiving explicit confirmation.",
+      "user_prompt": "Remove the first competitor from my first Mencoro project.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_project, preview_operation, delete_competitor",
+      "expected_output": "Identifies the competitor, previews the deletion including the mentions and results it removes, asks the user to confirm, and calls delete_competitor with the preview token only after an explicit yes; if the user declines, nothing is deleted.",
+      "expected_output_url": null
     }
   ],
   "negative_test_cases": [
     {
-      "description": "Do not invoke read-only analytics tools for requests to change monitoring configuration.",
-      "user_prompt": "Pause all my Mencoro tracked queries and delete every competitor from my project; do not retrieve any analytics.",
+      "description": "Do not invoke Mencoro tools for account security or payment changes the connector cannot make.",
+      "user_prompt": "Change my Mencoro password and replace the credit card on my subscription.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "Does not invoke Mencoro tools or claim to make changes and explains that this connector supports reading analytics rather than changing monitoring configuration.",
+      "expected_output": "Does not invoke Mencoro tools because passwords and payment details cannot be managed through this connector, and points the user to their Mencoro account settings.",
       "expected_output_url": null
     },
     {

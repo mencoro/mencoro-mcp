@@ -1,0 +1,12 @@
+interface:
+  display_name: "Mencoro Query Expansion"
+  short_description: "Find and add new queries worth tracking"
+  default_prompt: "Use $mencoro-query-expansion to find new prompts worth tracking for my Mencoro project."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mencoro"
+      description: "Mencoro brand monitoring; this skill adds tracked queries and needs the write permission"
+      transport: "streamable_http"
+      url: "https://api.mencoro.com/mcp"
