@@ -474,7 +474,7 @@ against the built artifact.
 Releases are cut by tagging. `npm version <patch|minor|major>`, mirror the new version into
 `server.json` (`.version`, the npm package entry, and the image tag), run
 `npm run check:manifests`, then push the tag — CI publishes to npm, GHCR and the MCP registry,
-in that order.
+in that order, then creates the GitHub release, which is what Glama builds a new version from.
 
 ## Support
 

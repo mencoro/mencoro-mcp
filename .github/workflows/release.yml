@@ -155,3 +155,26 @@ jobs:
           MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
         run: ./mcp-publisher login dns --domain mencoro.com --private-key "$MCP_REGISTRY_PRIVATE_KEY"
       - run: ./mcp-publisher publish
+
+  github-release:
+    name: Create the GitHub release
+    # Glama builds and lists a new version only for a GitHub release, not for a
+    # bare tag: v1.1.0 sat at 1.0.0 on Glama until a release was created by hand.
+    # Last, so a release appears only once every artifact it announces exists.
+    needs: [registry]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create the release unless it already exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "A release for $TAG already exists; leaving it as it is."
+            exit 0
+          fi
+          gh release create "$TAG" --verify-tag --latest --title "$TAG" --generate-notes
