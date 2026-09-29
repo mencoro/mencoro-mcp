@@ -747,27 +747,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Review sentiment, mention composition, and supporting examples.",
-      "user_prompt": "For my first accessible Mencoro project over the last 30 days, compare positive, neutral, and negative mentions, explain whether the brand is recommended or merely listed, and show up to 10 negative mention examples.",
-      "file_attachment_urls": null,
-      "tools_triggered": "list_projects, get_sentiment_breakdown, get_mention_mix, get_mention_samples",
-      "expected_output": "Returns sentiment aggregates, mention type/tone/qualifier counts, and at most 10 stored negative mention texts; if none exist, reports that clearly without inventing examples or running new checks.",
-      "expected_output_url": null
-    },
-    {
       "description": "Compare tracked competitors and inspect the sources cited in existing AI answers.",
       "user_prompt": "For my first accessible Mencoro project over the last 30 days, which tracked competitors outrank my brand when we appear in the same AI answer, and which websites are cited most often?",
       "file_attachment_urls": null,
       "tools_triggered": "list_projects, get_available_filters, get_competitor_cooccurrence, get_cited_sources",
       "expected_output": "Returns head-to-head statistics for configured competitors and citation-domain aggregates from stored answers, keeping those two analyses distinct and never browsing the cited websites.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Find tracked queries, inspect recent movers, and explain their share-of-voice history.",
-      "user_prompt": "For my first accessible Mencoro project, show the top 10 tracked queries by share of voice, the biggest gains and losses over the last 30 days, and the weekly history of the top query; explain what share of voice means and how its weights work.",
-      "file_attachment_urls": null,
-      "tools_triggered": "list_projects, search_tracked_queries, get_query_movers, get_tracked_query_time_series, get_metric_glossary, get_share_of_voice_formula",
-      "expected_output": "Returns at most 10 existing queries, gains and losses using the supported sort directions, the selected query history, and the metric definition and formula constants; handles an empty project without inventing a query.",
       "expected_output_url": null
     },
     {
@@ -779,27 +763,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Lower check spend by changing check frequency for the queries the user approves.",
-      "user_prompt": "My first Mencoro project uses too many checks. Show projected monthly checks, suggest which tracked queries could be checked weekly instead of daily, and apply the change only to the ones I approve.",
-      "file_attachment_urls": null,
-      "tools_triggered": "list_projects, get_usage, search_tracked_queries, update_tracked_queries",
-      "expected_output": "Reports current projected monthly checks, proposes specific queries with the checks each change saves, changes frequency only for the approved queries, and reports any that could not be changed.",
-      "expected_output_url": null
-    },
-    {
       "description": "Delete a competitor only after previewing the consequences and receiving explicit confirmation.",
-      "user_prompt": "Remove the first competitor from my first Mencoro project.",
+      "user_prompt": "Add a competitor called Review Test Competitor, with the website review-test-competitor.com, to my first Mencoro project. Then remove that competitor.",
       "file_attachment_urls": null,
       "tools_triggered": "list_projects, get_project, preview_operation, delete_competitor",
-      "expected_output": "Identifies the competitor, previews the deletion including the mentions and results it removes, asks the user to confirm, and calls delete_competitor with the preview token only after an explicit yes; if the user declines, nothing is deleted.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Answer a question about how Mencoro calculates a metric from its public guide.",
-      "user_prompt": "How does Mencoro calculate share of voice, and why can it be empty while coverage is not?",
-      "file_attachment_urls": null,
-      "tools_triggered": "get_mencoro_guide",
-      "expected_output": "Explains the weighting by mention type, tone and qualifier and the formula against tracked competitors, and that share of voice stays empty when no tracked competitor appears in the same answers; uses no account data.",
+      "expected_output": "Adds the competitor, then identifies it for removal, previews the deletion including the mentions and results it removes, asks the user to confirm, and calls delete_competitor with the preview token only after an explicit yes; if the user declines, nothing is deleted. No other competitor is touched.",
       "expected_output_url": null
     }
   ],
@@ -817,7 +785,7 @@
       "user_prompt": "Search the public web right now for reviews of a brand I have never tracked in Mencoro; do not use my stored project data.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "Does not invoke Mencoro tools because they cannot perform live web research or collect new monitoring results.",
+      "expected_output": "Does not invoke Mencoro tools because they cannot search the public web or read review sites. Monitoring a new brand would need a Mencoro project that the user sets up and approves first, which the user did not ask for.",
       "expected_output_url": null
     },
     {
@@ -825,7 +793,7 @@
       "user_prompt": "Schedule a meeting with my team tomorrow morning and email everyone an invitation.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "Does not invoke Mencoro tools because calendar scheduling and sending email are outside this connector's capabilities.",
+      "expected_output": "Does not invoke Mencoro tools because calendar scheduling and general email are outside this connector. Mencoro's invite_member only invites people to a Mencoro organization, which the user did not ask for.",
       "expected_output_url": null
     }
   ]
