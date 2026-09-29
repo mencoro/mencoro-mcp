@@ -73,6 +73,19 @@ if (!Array.isArray(catalog.tools) || catalog.tools.length === 0) {
   problems.push('catalog.json advertises no tools');
 }
 
+// The ChatGPT submission portal refuses an import whose counts differ ("test_cases must include
+// exactly 5 entries."), and it only says so when someone uploads the file during a submission.
+const submission = read('chatgpt-app-submission.json');
+const SUBMISSION_TEST_CASES = { test_cases: 5, negative_test_cases: 3 };
+
+for (const [field, expected] of Object.entries(SUBMISSION_TEST_CASES)) {
+  const count = Array.isArray(submission[field]) ? submission[field].length : 0;
+
+  if (count !== expected) {
+    problems.push(`chatgpt-app-submission.json has ${count} ${field}; the submission portal requires exactly ${expected}`);
+  }
+}
+
 // The Docker image builds its own file list rather than using `files`.
 const dockerfile = readFileSync(fileURLToPath(new URL('../Dockerfile', import.meta.url)), 'utf8');
 
