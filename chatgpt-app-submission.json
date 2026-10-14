@@ -11,13 +11,13 @@
     "apply_auto_clustering": {
       "annotations": {
         "readOnlyHint": false,
-        "destructiveHint": false,
+        "destructiveHint": true,
         "openWorldHint": false
       },
       "justifications": {
         "read_only_justification": "Applies a reviewed clustering proposal: creates the clusters it names and moves tracked queries into them.",
         "open_world_justification": "Changes only clusters and memberships in Mencoro and contacts no external system.",
-        "destructive_justification": "Creates clusters and changes memberships as the reviewed job's mode said, without deleting any tracked query; a retried call with the same requestId applies once."
+        "destructive_justification": "Marked destructive because in full_regroup mode it removes tracked queries from clusters they already belonged to, and the tool cannot restore those memberships. It deletes no cluster or tracked query, and a retried call with the same requestId applies once."
       }
     },
     "archive_organization": {
@@ -635,13 +635,13 @@
     "set_tracked_query_clusters": {
       "annotations": {
         "readOnlyHint": false,
-        "destructiveHint": false,
+        "destructiveHint": true,
         "openWorldHint": false
       },
       "justifications": {
         "read_only_justification": "Adds tracked queries to clusters or removes them from clusters.",
         "open_world_justification": "Changes only cluster memberships in Mencoro and contacts no external system.",
-        "destructive_justification": "Deletes no query or cluster; memberships can be changed back, and repeating the call leaves the same state."
+        "destructive_justification": "Marked destructive because removing a tracked query from a cluster also takes its past results out of that cluster's reports until it is added back. It deletes no query or cluster, and repeating the call leaves the same state."
       }
     },
     "start_auto_clustering": {
@@ -671,13 +671,13 @@
     "update_competitor": {
       "annotations": {
         "readOnlyHint": false,
-        "destructiveHint": false,
+        "destructiveHint": true,
         "openWorldHint": false
       },
       "justifications": {
         "read_only_justification": "Replaces a competitor's name, domains and brand names.",
         "open_world_justification": "Changes only the competitor's configuration in Mencoro and contacts no external system.",
-        "destructive_justification": "Replaces the values the user supplies but deletes no results; repeating the call leaves the same state."
+        "destructive_justification": "Marked destructive because it replaces the lists: a domain or brand name left out is removed and later checks stop matching it. Results already recorded are not deleted or re-matched, and repeating the call leaves the same state."
       }
     },
     "update_member": {
@@ -695,37 +695,37 @@
     "update_organization": {
       "annotations": {
         "readOnlyHint": false,
-        "destructiveHint": false,
+        "destructiveHint": true,
         "openWorldHint": false
       },
       "justifications": {
         "read_only_justification": "Changes an organization's name, description or contact email.",
         "open_world_justification": "Changes only the organization's profile in Mencoro and contacts no external system.",
-        "destructive_justification": "Replaces only the fields supplied and deletes nothing; it runs only with a confirmation token from a preview the user approved."
+        "destructive_justification": "Marked destructive because a value passed overwrites the current name, description or contact email, and no tool returns the old value. Fields left out are unchanged, and it runs only with a confirmation token from a preview the user approved."
       }
     },
     "update_project": {
       "annotations": {
         "readOnlyHint": false,
-        "destructiveHint": false,
+        "destructiveHint": true,
         "openWorldHint": false
       },
       "justifications": {
         "read_only_justification": "Renames a project or replaces the domains and brand names it is monitored for.",
         "open_world_justification": "Changes only the project's configuration in Mencoro and contacts no external system.",
-        "destructive_justification": "Replaces configuration values the user supplies but deletes no project, tracked query or collected result; repeating the call leaves the same state."
+        "destructive_justification": "Marked destructive because replacing the brand profile removes any domain or brand name left out, and later checks stop matching it. It deletes no project, tracked query or recorded result, and repeating the call leaves the same state."
       }
     },
     "update_tracked_queries": {
       "annotations": {
         "readOnlyHint": false,
-        "destructiveHint": false,
+        "destructiveHint": true,
         "openWorldHint": false
       },
       "justifications": {
         "read_only_justification": "Pauses, resumes, or changes the check frequency or passes of up to 100 tracked queries.",
         "open_world_justification": "Changes only tracked-query settings in Mencoro; resumed or rescheduled checks run later on the normal schedule, not as part of this call.",
-        "destructive_justification": "Deletes no query or history, and pausing is reversible with resume; repeating the call leaves the same state."
+        "destructive_justification": "Marked destructive because checks skipped while paused or at a lower frequency, and passes no longer captured, are never made up, and pausing cancels a check in progress. It deletes no query or history, resume restarts checks, and repeating the call leaves the same state."
       }
     }
   },
