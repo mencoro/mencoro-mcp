@@ -31,7 +31,7 @@ Never propose deleting queries as a saving; if the user asks for it, that is a s
 
 ## Apply
 
-- Apply only the changes the user approves, with `update_tracked_queries`: `operation` `"set_check_frequency"` with `checkFrequency`, `"set_passes"` with `nPasses`, or `"pause"`, for at most 100 `trackedQueryIds` per call.
+- Apply only the changes the user approves, with `set_tracked_query_check_frequency` (`checkFrequency`), `set_tracked_query_passes` (`nPasses`) or `pause_tracked_queries`, for at most 100 `trackedQueryIds` per call.
 - Report anything returned in `failed`, with its reason.
 - Call `get_usage` again and show projected monthly checks before and after.
 

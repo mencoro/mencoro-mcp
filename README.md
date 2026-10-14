@@ -21,8 +21,8 @@
 
 Mencoro tracks how brands surface in AI answer engines — ChatGPT, Perplexity, Google AI Overview
 and AI Mode — and in Google Search and Shopping. The MCP server exposes that data to any MCP client,
-and lets it manage projects, tracked queries, clusters and organizations, as **60 tools** (31 that
-read, 29 that change something) and **20 prompts**. One of them, `get_mencoro_guide`, answers
+and lets it manage projects, tracked queries, clusters and organizations, as **66 tools** (31 that
+read, 35 that change something) and **20 prompts**. One of them, `get_mencoro_guide`, answers
 questions about Mencoro itself and works without signing in.
 
 The server is **hosted**. Most clients should connect to it directly:
@@ -224,7 +224,7 @@ would otherwise override the token you just configured.
 
 ## Tools
 
-31 tools read and 29 change something. Every tool declares all four MCP annotations
+31 tools read and 35 change something. Every tool declares all four MCP annotations
 (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) explicitly, so a client can
 decide what to ask you before calling it.
 
@@ -284,14 +284,18 @@ the plan described has changed. Creating tools, job starters and confirmable too
 | `update_competitor` | `write` | | Replace a competitor's name, website domains and brand names. |
 | `delete_competitor` | `write` | C | Remove a competitor with every mention and search or shopping result recorded for it. |
 | `create_tracked_queries` | `write` | C | Add tracked queries in bulk across engines and countries; the preview shows the checks they will spend. |
-| `update_tracked_queries` | `write` | | Pause, resume, or change the frequency or passes of up to 100 tracked queries. |
+| `pause_tracked_queries` | `write` | | Pause up to 100 tracked queries; skipped checks are not made up. |
+| `resume_tracked_queries` | `write` | | Resume up to 100 paused tracked queries. |
+| `set_tracked_query_check_frequency` | `write` | | Change how often up to 100 tracked queries are checked. |
+| `set_tracked_query_passes` | `write` | | Change how many answers each check of up to 100 tracked queries captures. |
 | `delete_tracked_queries` | `write` | C | Delete up to 100 tracked queries with their captured answers, matches and history. |
 | `run_checks` | `write` | C | Check tracked queries now, spending budget. |
 | `report_ai_response` | `write` | | Flag a captured AI answer that was analysed wrong. |
 | `create_clusters` | `write` | | Create keyword clusters. |
 | `rename_cluster` | `write` | | Rename a cluster. |
 | `delete_cluster` | `write` | C | Delete a cluster; its tracked queries stay. |
-| `set_tracked_query_clusters` | `write` | | Add tracked queries to clusters, or remove them. |
+| `add_tracked_queries_to_clusters` | `write` | | Add tracked queries to clusters. |
+| `remove_tracked_queries_from_clusters` | `write` | | Remove tracked queries from clusters. |
 | `start_auto_clustering` | `write` | | Start a job that proposes a clustering. |
 | `apply_auto_clustering` | `write` | | Apply a proposal the user approved. |
 | `suggest_brand_names` | `write` | | Start a job that suggests brand names for a website. |
@@ -304,7 +308,9 @@ the plan described has changed. Creating tools, job starters and confirmable too
 | `restore_organization` | `organization:manage` | C | Restore an archived organization. |
 | `invite_member` | `organization:manage` | C | Invite someone by email with a role. |
 | `cancel_invitation` | `organization:manage` | C | Cancel a pending invitation. |
-| `update_member` | `organization:manage` | C | Change a member's role, or suspend or reactivate them. |
+| `change_member_role` | `organization:manage` | C | Give a member another role. |
+| `suspend_member` | `organization:manage` | C | Suspend a member, taking their access away. |
+| `reactivate_member` | `organization:manage` | C | Give a suspended member their access back. |
 
 A change is refused exactly where the Mencoro app refuses it: your role in the organization, an
 archived project, or a missing subscription where the app requires one.
