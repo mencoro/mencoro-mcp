@@ -2,6 +2,90 @@
     "source": "https://api.mencoro.com/public/v1/mcp",
     "tools": [
         {
+            "name": "add_tracked_queries_to_clusters",
+            "title": "Add tracked queries to clusters",
+            "description": "Add up to 100 tracked queries to one or more query clusters. Other cluster memberships are left alone. Each tracked query that cannot be changed is reported in \"failed\" without stopping the rest. Safe to retry.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryIds",
+                    "queryClusterIds"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "successful": {
+                        "description": "The resources the operation was applied to.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "failed": {
+                        "description": "Always present, empty list included: read it rather than inferring success from the status code.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "errorCode": {
+                                    "description": "The same code a single-item call returns for this problem.",
+                                    "type": "string"
+                                },
+                                "errorMessage": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "description": "Per-item results of a batch write"
+            },
+            "annotations": {
+                "title": "Add tracked queries to clusters",
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
             "name": "apply_auto_clustering",
             "title": "Apply a proposed clustering",
             "description": "Apply the grouping a completed start_auto_clustering job proposed: creates the clusters it named and moves the tracked queries into them, as the job's mode said. In \"full_regroup\" mode a tracked query the proposal places also leaves every cluster the proposal did not put it in; \"fill_gaps\" and \"add_on_top\" only add. No cluster or tracked query is deleted. Cluster names are lower-cased like create_clusters, and a proposed name that matches an existing cluster reuses it instead of creating a second one. The response lists each tracked query's resulting clusters, not the memberships removed, so show the proposal (get_job) to the user first. Pass a fresh requestId and reuse it if you retry, so a retry never applies twice.",
@@ -435,9 +519,102 @@
             }
         },
         {
+            "name": "change_member_role",
+            "title": "Change a member's role",
+            "description": "Give an organization member another role: owner, manager or viewer. memberId is the member id from list_members, not the user id. Requires a confirmationToken: call preview_operation with tool \"change_member_role\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "memberId": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "owner",
+                            "manager",
+                            "viewer"
+                        ]
+                    },
+                    "confirmationToken": {
+                        "type": "string"
+                    },
+                    "requestId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "memberId",
+                    "role",
+                    "confirmationToken"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "userId": {
+                        "description": "The user this membership belongs to",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "owner",
+                            "manager",
+                            "viewer"
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended"
+                        ]
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "joinedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "userId",
+                    "role",
+                    "state",
+                    "isActive",
+                    "joinedAt"
+                ],
+                "description": "A membership of an organization"
+            },
+            "annotations": {
+                "title": "Change a member's role",
+                "readOnlyHint": false,
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
             "name": "create_clusters",
             "title": "Create query clusters",
-            "description": "Create up to 100 query clusters in a project, the groups tracked queries are organized in. Names are stored lower-cased and must be unique in the project; each name that cannot be created is reported in \"failed\" without stopping the rest. Assign tracked queries with set_tracked_query_clusters, or let start_auto_clustering propose groups. Pass a fresh requestId and reuse it if you retry.",
+            "description": "Create up to 100 query clusters in a project, the groups tracked queries are organized in. Names are stored lower-cased and must be unique in the project; each name that cannot be created is reported in \"failed\" without stopping the rest. Assign tracked queries with add_tracked_queries_to_clusters, or let start_auto_clustering propose groups. Pass a fresh requestId and reuse it if you retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1122,7 +1299,7 @@
         {
             "name": "delete_tracked_queries",
             "title": "Delete tracked queries",
-            "description": "Delete up to 100 tracked queries, together with their captured answers, matches and metrics history. Irreversible; to stop spending budget without losing history, pause them with update_tracked_queries instead. Requires a confirmationToken: call preview_operation with tool \"delete_tracked_queries\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees.",
+            "description": "Delete up to 100 tracked queries, together with their captured answers, matches and metrics history. Irreversible; to stop spending budget without losing history, pause them with pause_tracked_queries instead. Requires a confirmationToken: call preview_operation with tool \"delete_tracked_queries\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -6295,7 +6472,7 @@
         {
             "name": "list_members",
             "title": "List organization members",
-            "description": "The members of an organization, oldest first, with their role and state; optionally also its pending invitations. Owners only, as in the web app. The member \"id\" (not the userId) is what update_member takes.",
+            "description": "The members of an organization, oldest first, with their role and state; optionally also its pending invitations. Owners only, as in the web app. The member \"id\" (not the userId) is what change_member_role, suspend_member and reactivate_member take.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -7002,6 +7179,81 @@
             }
         },
         {
+            "name": "pause_tracked_queries",
+            "title": "Pause tracked queries",
+            "description": "Pause up to 100 tracked queries: their checks stop until resume_tracked_queries restarts them, so they spend no budget meanwhile; use get_usage to see the effect. Checks skipped while paused are never made up later, and pausing also cancels a check still in progress. Each one that cannot be paused is reported in \"failed\". Safe to retry.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryIds"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "successful": {
+                        "description": "The resources the operation was applied to.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "failed": {
+                        "description": "Always present, empty list included: read it rather than inferring success from the status code.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "errorCode": {
+                                    "description": "The same code a single-item call returns for this problem.",
+                                    "type": "string"
+                                },
+                                "errorMessage": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "description": "Per-item results of a batch write"
+            },
+            "annotations": {
+                "title": "Pause tracked queries",
+                "readOnlyHint": false,
+                "destructiveHint": true,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
             "name": "preview_operation",
             "title": "Preview an operation before running it",
             "description": "Describe exactly what a confirmable write tool would do and get the confirmationToken it requires. Pass the name of the write tool as \"tool\" and the arguments you would pass it (without confirmationToken and requestId) as \"arguments\". Show the returned plan to the user and wait for an explicit yes before calling the tool with the same arguments and this confirmationToken. The token is single-use, expires after a few minutes, and is refused if anything the plan describes has changed.",
@@ -7023,7 +7275,9 @@
                             "restore_organization",
                             "invite_member",
                             "cancel_invitation",
-                            "update_member"
+                            "change_member_role",
+                            "suspend_member",
+                            "reactivate_member"
                         ]
                     },
                     "arguments": {
@@ -7212,6 +7466,174 @@
                 "readOnlyHint": true,
                 "destructiveHint": false,
                 "idempotentHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "reactivate_member",
+            "title": "Reactivate a member",
+            "description": "Give a suspended member their access to the organization back. memberId is the member id from list_members, not the user id. Requires a confirmationToken: call preview_operation with tool \"reactivate_member\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "memberId": {
+                        "type": "string"
+                    },
+                    "confirmationToken": {
+                        "type": "string"
+                    },
+                    "requestId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "memberId",
+                    "confirmationToken"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "userId": {
+                        "description": "The user this membership belongs to",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "owner",
+                            "manager",
+                            "viewer"
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended"
+                        ]
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "joinedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "userId",
+                    "role",
+                    "state",
+                    "isActive",
+                    "joinedAt"
+                ],
+                "description": "A membership of an organization"
+            },
+            "annotations": {
+                "title": "Reactivate a member",
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "remove_tracked_queries_from_clusters",
+            "title": "Remove tracked queries from clusters",
+            "description": "Take up to 100 tracked queries out of one or more query clusters. Other cluster memberships are left alone. Removing also takes the tracked query's past results out of that cluster's reports until it is added back with add_tracked_queries_to_clusters. Each tracked query that cannot be changed is reported in \"failed\" without stopping the rest. Safe to retry.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryIds",
+                    "queryClusterIds"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "successful": {
+                        "description": "The resources the operation was applied to.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "failed": {
+                        "description": "Always present, empty list included: read it rather than inferring success from the status code.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "errorCode": {
+                                    "description": "The same code a single-item call returns for this problem.",
+                                    "type": "string"
+                                },
+                                "errorMessage": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "description": "Per-item results of a batch write"
+            },
+            "annotations": {
+                "title": "Remove tracked queries from clusters",
+                "readOnlyHint": false,
+                "destructiveHint": true,
+                "idempotentHint": true,
                 "openWorldHint": false
             }
         },
@@ -7580,6 +8002,81 @@
             },
             "annotations": {
                 "title": "Restore an archived project",
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "resume_tracked_queries",
+            "title": "Resume tracked queries",
+            "description": "Restart the checks of up to 100 paused tracked queries; they spend budget again, so use get_usage to see the effect. Checks skipped while they were paused are not made up. Each one that cannot be resumed is reported in \"failed\". Safe to retry.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryIds"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "successful": {
+                        "description": "The resources the operation was applied to.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "failed": {
+                        "description": "Always present, empty list included: read it rather than inferring success from the status code.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "errorCode": {
+                                    "description": "The same code a single-item call returns for this problem.",
+                                    "type": "string"
+                                },
+                                "errorMessage": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "description": "Per-item results of a batch write"
+            },
+            "annotations": {
+                "title": "Resume tracked queries",
                 "readOnlyHint": false,
                 "destructiveHint": false,
                 "idempotentHint": true,
@@ -7977,9 +8474,9 @@
             }
         },
         {
-            "name": "set_tracked_query_clusters",
-            "title": "Add or remove tracked queries from clusters",
-            "description": "Add up to 100 tracked queries to one or more query clusters (\"add\"), or take them out (\"remove\"). Other cluster memberships are left alone. Removing also takes the tracked query's past results out of that cluster's reports until it is added back. Each tracked query that cannot be changed is reported in \"failed\" without stopping the rest. Safe to retry.",
+            "name": "set_tracked_query_check_frequency",
+            "title": "Set how often tracked queries are checked",
+            "description": "Change how often up to 100 tracked queries are checked: daily, weekly or monthly. A lower frequency spends less budget; use get_usage to see the effect. Checks skipped at a lower frequency are never made up later. Each one that cannot be changed is reported in \"failed\". Safe to retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -7989,13 +8486,6 @@
                     "projectId": {
                         "type": "string"
                     },
-                    "operation": {
-                        "type": "string",
-                        "enum": [
-                            "add",
-                            "remove"
-                        ]
-                    },
                     "trackedQueryIds": {
                         "type": "array",
                         "items": {
@@ -8004,21 +8494,20 @@
                         "minItems": 1,
                         "maxItems": 100
                     },
-                    "queryClusterIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "minItems": 1,
-                        "maxItems": 100
+                    "checkFrequency": {
+                        "type": "string",
+                        "enum": [
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ]
                     }
                 },
                 "required": [
                     "organizationId",
                     "projectId",
-                    "operation",
                     "trackedQueryIds",
-                    "queryClusterIds"
+                    "checkFrequency"
                 ]
             },
             "outputSchema": {
@@ -8061,7 +8550,88 @@
                 "description": "Per-item results of a batch write"
             },
             "annotations": {
-                "title": "Add or remove tracked queries from clusters",
+                "title": "Set how often tracked queries are checked",
+                "readOnlyHint": false,
+                "destructiveHint": true,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "set_tracked_query_passes",
+            "title": "Set how many answers each check captures",
+            "description": "Change how many answers each check of up to 100 tracked queries captures (nPasses; above 1 only for AI engines). Fewer passes spend less budget; use get_usage to see the effect. Passes no longer captured are never made up later. Each one that cannot be changed is reported in \"failed\". Safe to retry.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    },
+                    "nPasses": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryIds",
+                    "nPasses"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "successful": {
+                        "description": "The resources the operation was applied to.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "failed": {
+                        "description": "Always present, empty list included: read it rather than inferring success from the status code.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "errorCode": {
+                                    "description": "The same code a single-item call returns for this problem.",
+                                    "type": "string"
+                                },
+                                "errorMessage": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "description": "Per-item results of a batch write"
+            },
+            "annotations": {
+                "title": "Set how many answers each check captures",
                 "readOnlyHint": false,
                 "destructiveHint": true,
                 "idempotentHint": true,
@@ -8235,6 +8805,90 @@
             }
         },
         {
+            "name": "suspend_member",
+            "title": "Suspend a member",
+            "description": "Suspend an organization member: they lose access immediately but stay a member, and reactivate_member gives it back. memberId is the member id from list_members, not the user id. Requires a confirmationToken: call preview_operation with tool \"suspend_member\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "memberId": {
+                        "type": "string"
+                    },
+                    "confirmationToken": {
+                        "type": "string"
+                    },
+                    "requestId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "memberId",
+                    "confirmationToken"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "userId": {
+                        "description": "The user this membership belongs to",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "owner",
+                            "manager",
+                            "viewer"
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended"
+                        ]
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "joinedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "userId",
+                    "role",
+                    "state",
+                    "isActive",
+                    "joinedAt"
+                ],
+                "description": "A membership of an organization"
+            },
+            "annotations": {
+                "title": "Suspend a member",
+                "readOnlyHint": false,
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": false
+            }
+        },
+        {
             "name": "update_competitor",
             "title": "Update a competitor",
             "description": "Replace a competitor's name, website domains and brand names. Replaces all three: pass every domain and name the competitor should keep. A domain or brand name left out is removed, and later checks no longer match on it; results already recorded are not re-matched or deleted. Show the user the full new lists before calling. Safe to retry.",
@@ -8314,112 +8968,6 @@
                 "readOnlyHint": false,
                 "destructiveHint": true,
                 "idempotentHint": true,
-                "openWorldHint": false
-            }
-        },
-        {
-            "name": "update_member",
-            "title": "Change a member",
-            "description": "Change an organization member: operation \"change_role\" gives them another role (pass role), \"suspend\" takes their access away without removing them, \"reactivate\" gives it back. memberId is the member id from list_members, not the user id. Requires a confirmationToken: call preview_operation with tool \"update_member\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "organizationId": {
-                        "type": "string"
-                    },
-                    "memberId": {
-                        "type": "string"
-                    },
-                    "operation": {
-                        "type": "string",
-                        "enum": [
-                            "change_role",
-                            "suspend",
-                            "reactivate"
-                        ]
-                    },
-                    "confirmationToken": {
-                        "type": "string"
-                    },
-                    "role": {
-                        "type": [
-                            "null",
-                            "string"
-                        ],
-                        "default": null,
-                        "enum": [
-                            "owner",
-                            "manager",
-                            "viewer",
-                            null
-                        ]
-                    },
-                    "requestId": {
-                        "type": [
-                            "null",
-                            "string"
-                        ],
-                        "default": null,
-                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
-                    }
-                },
-                "required": [
-                    "organizationId",
-                    "memberId",
-                    "operation",
-                    "confirmationToken"
-                ]
-            },
-            "outputSchema": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "format": "uuid"
-                    },
-                    "userId": {
-                        "description": "The user this membership belongs to",
-                        "type": "string",
-                        "format": "uuid"
-                    },
-                    "role": {
-                        "type": "string",
-                        "enum": [
-                            "owner",
-                            "manager",
-                            "viewer"
-                        ]
-                    },
-                    "state": {
-                        "type": "string",
-                        "enum": [
-                            "active",
-                            "suspended"
-                        ]
-                    },
-                    "isActive": {
-                        "type": "boolean"
-                    },
-                    "joinedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                },
-                "required": [
-                    "id",
-                    "userId",
-                    "role",
-                    "state",
-                    "isActive",
-                    "joinedAt"
-                ],
-                "description": "A membership of an organization"
-            },
-            "annotations": {
-                "title": "Change a member",
-                "readOnlyHint": false,
-                "destructiveHint": true,
-                "idempotentHint": false,
                 "openWorldHint": false
             }
         },
@@ -8736,113 +9284,6 @@
             },
             "annotations": {
                 "title": "Update a project",
-                "readOnlyHint": false,
-                "destructiveHint": true,
-                "idempotentHint": true,
-                "openWorldHint": false
-            }
-        },
-        {
-            "name": "update_tracked_queries",
-            "title": "Change tracked queries",
-            "description": "Change up to 100 tracked queries at once. operation \"pause\" stops their checks, \"resume\" restarts them, \"set_check_frequency\" changes how often they are checked (pass checkFrequency), \"set_passes\" changes how many answers each check captures (pass nPasses; above 1 only for AI engines). Lower frequency or fewer passes spend less budget; use get_usage to see the effect. Checks skipped while paused or at a lower frequency, and passes no longer captured, are never made up later; pausing also cancels a check still in progress. Each one that cannot be changed is reported in \"failed\". Safe to retry.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "organizationId": {
-                        "type": "string"
-                    },
-                    "projectId": {
-                        "type": "string"
-                    },
-                    "operation": {
-                        "type": "string",
-                        "enum": [
-                            "pause",
-                            "resume",
-                            "set_check_frequency",
-                            "set_passes"
-                        ]
-                    },
-                    "trackedQueryIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "minItems": 1,
-                        "maxItems": 100
-                    },
-                    "checkFrequency": {
-                        "type": [
-                            "null",
-                            "string"
-                        ],
-                        "default": null,
-                        "enum": [
-                            "daily",
-                            "weekly",
-                            "monthly",
-                            null
-                        ]
-                    },
-                    "nPasses": {
-                        "type": [
-                            "null",
-                            "integer"
-                        ],
-                        "default": null,
-                        "minimum": 1,
-                        "maximum": 10
-                    }
-                },
-                "required": [
-                    "organizationId",
-                    "projectId",
-                    "operation",
-                    "trackedQueryIds"
-                ]
-            },
-            "outputSchema": {
-                "type": "object",
-                "properties": {
-                    "successful": {
-                        "description": "The resources the operation was applied to.",
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "id": {
-                                    "type": "string",
-                                    "format": "uuid"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    },
-                    "failed": {
-                        "description": "Always present, empty list included: read it rather than inferring success from the status code.",
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "id": {
-                                    "type": "string",
-                                    "format": "uuid"
-                                },
-                                "errorCode": {
-                                    "description": "The same code a single-item call returns for this problem.",
-                                    "type": "string"
-                                },
-                                "errorMessage": {
-                                    "type": "string"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    }
-                },
-                "description": "Per-item results of a batch write"
-            },
-            "annotations": {
-                "title": "Change tracked queries",
                 "readOnlyHint": false,
                 "destructiveHint": true,
                 "idempotentHint": true,

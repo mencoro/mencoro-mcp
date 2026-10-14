@@ -26,7 +26,7 @@ Regroup a project's tracked queries into clusters. Nothing changes until the use
 ## Apply
 
 - Call `apply_auto_clustering` with the `jobId` and a fresh `requestId` only after the user approves the whole proposal. Reuse that `requestId` if the call has to be retried, so it never applies twice.
-- If the user wants only part of it, do not apply the job. Make the agreed changes directly: `create_clusters` for new names, then `set_tracked_query_clusters` with `operation: "add"` (or `"remove"`) for the agreed memberships.
+- If the user wants only part of it, do not apply the job. Make the agreed changes directly: `create_clusters` for new names, then `add_tracked_queries_to_clusters` (or `remove_tracked_queries_from_clusters`) for the agreed memberships.
 - Renaming (`rename_cluster`) and deleting (`delete_cluster`) are separate requests. Deleting needs `preview_operation` with `tool: "delete_cluster"` first and the user's yes on the returned plan; a deleted cluster's queries are kept, they only leave it.
 
 ## Handle refusals
