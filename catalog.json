@@ -4,7 +4,7 @@
         {
             "name": "apply_auto_clustering",
             "title": "Apply a proposed clustering",
-            "description": "Apply the grouping a completed start_auto_clustering job proposed: creates the clusters it named and moves the tracked queries into them, as the job's mode said. Cluster names are lower-cased like create_clusters, and a proposed name that matches an existing cluster reuses it instead of creating a second one. Show the proposal (get_job) to the user first. Pass a fresh requestId and reuse it if you retry, so a retry never applies twice.",
+            "description": "Apply the grouping a completed start_auto_clustering job proposed: creates the clusters it named and moves the tracked queries into them, as the job's mode said. In \"full_regroup\" mode a tracked query the proposal places also leaves every cluster the proposal did not put it in; \"fill_gaps\" and \"add_on_top\" only add. No cluster or tracked query is deleted. Cluster names are lower-cased like create_clusters, and a proposed name that matches an existing cluster reuses it instead of creating a second one. The response lists each tracked query's resulting clusters, not the memberships removed, so show the proposal (get_job) to the user first. Pass a fresh requestId and reuse it if you retry, so a retry never applies twice.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -122,7 +122,7 @@
             "annotations": {
                 "title": "Apply a proposed clustering",
                 "readOnlyHint": false,
-                "destructiveHint": false,
+                "destructiveHint": true,
                 "idempotentHint": false,
                 "openWorldHint": false
             }
@@ -522,7 +522,7 @@
         {
             "name": "create_competitor",
             "title": "Add a competitor",
-            "description": "Add a competitor to a project, with its website domains and the names it is mentioned by; from then on its mentions and rankings are tracked beside the brand's. discover_brands can propose competitors. Pass a fresh requestId and reuse it if you retry.",
+            "description": "Add a competitor to a project, with its website domains and the names it is mentioned by; from then on its mentions and rankings are tracked beside the brand's. list_untracked_competitors shows the brands AI answers name that are not tracked yet. Pass a fresh requestId and reuse it if you retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -850,6 +850,7 @@
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -879,7 +880,7 @@
                     },
                     "nPasses": {
                         "type": "integer",
-                        "description": "Answers captured per check; more than 1 only for AI engines. Each pass costs one check.",
+                        "description": "Answers captured per check; more than 1 only for AI engines. Each pass counts as one check against your plan; a Claude pass counts as five.",
                         "minimum": 1,
                         "maximum": 10
                     },
@@ -1563,7 +1564,7 @@
         {
             "name": "get_cited_sources",
             "title": "Cited domains and pages",
-            "description": "The domains (groupBy=domain) or pages (groupBy=page) most cited across a project's AI answers in a date window — the sources the answer engines drew on. Per source: how many times it was cited, how many distinct answers and tracked queries it appeared in, and its average rank within the citation lists. The list is UNFILTERED by ownership: it includes the brand's, competitors' and third-party sources. Only AI answer engines (chatgpt, perplexity, google_ai_overview, google_ai_mode) produce citations. Dates must fall within the data retention window. Answers questions like \"which websites and pages does the AI cite or quote for me versus competitors\".",
+            "description": "The domains (groupBy=domain) or pages (groupBy=page) most cited across a project's AI answers in a date window — the sources the answer engines drew on. Per source: how many times it was cited, how many distinct answers and tracked queries it appeared in, and its average rank within the citation lists. The list is UNFILTERED by ownership: it includes the brand's, competitors' and third-party sources. Only AI answer engines (chatgpt, claude, perplexity, google_ai_overview, google_ai_mode) produce citations. Dates must fall within the data retention window. Answers questions like \"which websites and pages does the AI cite or quote for me versus competitors\".",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1581,12 +1582,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode (only AI engines carry citations)",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode (only AI engines carry citations)",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -1725,12 +1727,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -1972,12 +1975,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode (SERP/Shopping have no AI text mentions)",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode (SERP/Shopping have no AI text mentions)",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -2314,12 +2318,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -2401,12 +2406,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -2547,6 +2553,83 @@
                                         }
                                     ],
                                     "description": "1-based rank; LOWER is better."
+                                },
+                                "citations": {
+                                    "description": "Sources the engine cited, in the order it cited them",
+                                    "type": "array",
+                                    "items": {
+                                        "description": "A source cited inside one AI answer",
+                                        "required": [
+                                            "url",
+                                            "position",
+                                            "unresolved"
+                                        ],
+                                        "properties": {
+                                            "url": {
+                                                "description": "The URL exactly as the engine cited it, redirector included when unresolved is true",
+                                                "type": "string"
+                                            },
+                                            "position": {
+                                                "description": "Place within this answer, starting at 1",
+                                                "type": "integer",
+                                                "minimum": 1
+                                            },
+                                            "anchorText": {
+                                                "description": "The visible link text, when the engine provided one",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "title": {
+                                                "description": "Title of the cited page, when the engine provided one",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "snippet": {
+                                                "description": "Excerpt the engine showed for this source, when it provided one",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "publicationDate": {
+                                                "description": "Publication date the engine reported, when it provided one",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "thumbnailUrl": {
+                                                "description": "Preview image the engine showed for this source, when it provided one",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "domain": {
+                                                "description": "Host of url. Belongs to the redirector, not the publisher, when unresolved is true",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "sourceName": {
+                                                "description": "Publisher name the engine reported, when it provided one",
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "unresolved": {
+                                                "description": "True when url still points at a redirector: count the citation, do not attribute the domain",
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
                                 },
                                 "text": {
                                     "type": "string"
@@ -3096,12 +3179,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -3592,12 +3676,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -3721,12 +3806,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -4027,12 +4113,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -4276,6 +4363,7 @@
                         "type": "string",
                         "enum": [
                             "chatgpt",
+                            "claude",
                             "perplexity",
                             "google_ai_overview",
                             "google_ai_mode",
@@ -5222,7 +5310,7 @@
                         ],
                         "properties": {
                             "projectedMonthlyChecks": {
-                                "description": "Checks a month of the current configuration would consume: for each ACTIVE tracked query, its runs per month (daily 30, weekly 4, monthly 1) multiplied by its nPasses, summed. Never null.",
+                                "description": "Checks a month of the current configuration would consume: for each ACTIVE tracked query, its runs per month (daily 30, weekly 4, monthly 1) multiplied by its nPasses and engine weight, summed. Claude uses five checks per pass; every other engine uses one. Never null.",
                                 "type": "integer",
                                 "minimum": 0
                             },
@@ -5424,6 +5512,7 @@
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode"
@@ -5750,6 +5839,7 @@
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -5914,6 +6004,7 @@
                                         "type": "string",
                                         "enum": [
                                             "chatgpt",
+                                            "claude",
                                             "perplexity",
                                             "google_ai_overview",
                                             "google_ai_mode",
@@ -5974,7 +6065,7 @@
                                     }
                                 },
                                 "nPassesValues": {
-                                    "description": "Distinct pass counts across the variants. A pass is one budget unit per check.",
+                                    "description": "Distinct pass counts across the variants. Each Claude pass consumes five checks; each other engine pass consumes one.",
                                     "type": "array",
                                     "items": {
                                         "type": "integer"
@@ -6799,12 +6890,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode (SERP/Shopping have no AI text mentions)",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode (SERP/Shopping have no AI text mentions)",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -7497,7 +7589,7 @@
         {
             "name": "run_checks",
             "title": "Check tracked queries now",
-            "description": "Check tracked queries now instead of waiting for their schedule: name up to 100 in trackedQueryIds, or pass all: true for every active tracked query of the project, however recently it was checked (a query whose check is still running is skipped). Each check spends budget (one per pass). Requires a confirmationToken: call preview_operation with tool \"run_checks\" and these arguments first, show the returned plan (which checks run, what they cost) to the user, and call this tool only after the user explicitly agrees. Results arrive over the next minutes; read them with the analytics tools.",
+            "description": "Check tracked queries now instead of waiting for their schedule: name up to 100 in trackedQueryIds, or pass all: true for every active tracked query of the project, however recently it was checked (a query whose check is still running is skipped). Each check spends budget (each pass counts as one check; a Claude pass counts as five). Requires a confirmationToken: call preview_operation with tool \"run_checks\" and these arguments first, show the returned plan (which checks run, what they cost) to the user, and call this tool only after the user explicitly agrees. Results arrive over the next minutes; read them with the analytics tools.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -7642,12 +7734,13 @@
                     },
                     "engines": {
                         "type": "array",
-                        "description": "allowed values: chatgpt, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping",
                         "default": [],
                         "items": {
                             "type": "string",
                             "enum": [
                                 "chatgpt",
+                                "claude",
                                 "perplexity",
                                 "google_ai_overview",
                                 "google_ai_mode",
@@ -7886,7 +7979,7 @@
         {
             "name": "set_tracked_query_clusters",
             "title": "Add or remove tracked queries from clusters",
-            "description": "Add up to 100 tracked queries to one or more query clusters (\"add\"), or take them out (\"remove\"). Other cluster memberships are left alone. Each tracked query that cannot be changed is reported in \"failed\" without stopping the rest. Safe to retry.",
+            "description": "Add up to 100 tracked queries to one or more query clusters (\"add\"), or take them out (\"remove\"). Other cluster memberships are left alone. Removing also takes the tracked query's past results out of that cluster's reports until it is added back. Each tracked query that cannot be changed is reported in \"failed\" without stopping the rest. Safe to retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -7970,7 +8063,7 @@
             "annotations": {
                 "title": "Add or remove tracked queries from clusters",
                 "readOnlyHint": false,
-                "destructiveHint": false,
+                "destructiveHint": true,
                 "idempotentHint": true,
                 "openWorldHint": false
             }
@@ -8144,7 +8237,7 @@
         {
             "name": "update_competitor",
             "title": "Update a competitor",
-            "description": "Replace a competitor's name, website domains and brand names. Replaces all three: pass every domain and name the competitor should keep. Safe to retry.",
+            "description": "Replace a competitor's name, website domains and brand names. Replaces all three: pass every domain and name the competitor should keep. A domain or brand name left out is removed, and later checks no longer match on it; results already recorded are not re-matched or deleted. Show the user the full new lists before calling. Safe to retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -8219,7 +8312,7 @@
             "annotations": {
                 "title": "Update a competitor",
                 "readOnlyHint": false,
-                "destructiveHint": false,
+                "destructiveHint": true,
                 "idempotentHint": true,
                 "openWorldHint": false
             }
@@ -8333,7 +8426,7 @@
         {
             "name": "update_organization",
             "title": "Update an organization",
-            "description": "Change the name, description or contact email of an organization; arguments left out are unchanged. Requires a confirmationToken: call preview_operation with tool \"update_organization\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
+            "description": "Change the name, description or contact email of an organization; arguments left out are unchanged. A value passed overwrites the current one, and no tool returns the old value afterwards. Requires a confirmationToken: call preview_operation with tool \"update_organization\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -8442,7 +8535,7 @@
             "annotations": {
                 "title": "Update an organization",
                 "readOnlyHint": false,
-                "destructiveHint": false,
+                "destructiveHint": true,
                 "idempotentHint": true,
                 "openWorldHint": false
             }
@@ -8450,7 +8543,7 @@
         {
             "name": "update_project",
             "title": "Update a project",
-            "description": "Rename a project, replace the website domains and brand names it is monitored for, or both. brandProfile replaces both lists entirely: pass every domain and name the project should keep. Safe to retry.",
+            "description": "Rename a project, replace the website domains and brand names it is monitored for, or both. A rename alone removes nothing. brandProfile replaces both lists entirely: pass every domain and name the project should keep. A domain or brand name left out is removed, and later checks no longer match on it; results already recorded are not re-matched or deleted. Show the user the full new lists before calling. Safe to retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -8644,7 +8737,7 @@
             "annotations": {
                 "title": "Update a project",
                 "readOnlyHint": false,
-                "destructiveHint": false,
+                "destructiveHint": true,
                 "idempotentHint": true,
                 "openWorldHint": false
             }
@@ -8652,7 +8745,7 @@
         {
             "name": "update_tracked_queries",
             "title": "Change tracked queries",
-            "description": "Change up to 100 tracked queries at once. operation \"pause\" stops their checks, \"resume\" restarts them, \"set_check_frequency\" changes how often they are checked (pass checkFrequency), \"set_passes\" changes how many answers each check captures (pass nPasses; above 1 only for AI engines). Lower frequency or fewer passes spend less budget; use get_usage to see the effect. Each one that cannot be changed is reported in \"failed\". Safe to retry.",
+            "description": "Change up to 100 tracked queries at once. operation \"pause\" stops their checks, \"resume\" restarts them, \"set_check_frequency\" changes how often they are checked (pass checkFrequency), \"set_passes\" changes how many answers each check captures (pass nPasses; above 1 only for AI engines). Lower frequency or fewer passes spend less budget; use get_usage to see the effect. Checks skipped while paused or at a lower frequency, and passes no longer captured, are never made up later; pausing also cancels a check still in progress. Each one that cannot be changed is reported in \"failed\". Safe to retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -8751,7 +8844,7 @@
             "annotations": {
                 "title": "Change tracked queries",
                 "readOnlyHint": false,
-                "destructiveHint": false,
+                "destructiveHint": true,
                 "idempotentHint": true,
                 "openWorldHint": false
             }
