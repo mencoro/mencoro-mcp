@@ -591,6 +591,22 @@
                     "joinedAt": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "projectAccessMode": {
+                        "description": "Which projects of the organization the member reaches: every project, or only projectIds",
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "selected"
+                        ]
+                    },
+                    "projectIds": {
+                        "description": "The projects a selected access reaches; empty when the mode is all",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
                     }
                 },
                 "required": [
@@ -599,7 +615,9 @@
                     "role",
                     "state",
                     "isActive",
-                    "joinedAt"
+                    "joinedAt",
+                    "projectAccessMode",
+                    "projectIds"
                 ],
                 "description": "A membership of an organization"
             },
@@ -843,7 +861,7 @@
         {
             "name": "create_project",
             "title": "Create a project",
-            "description": "Create a project that monitors a brand: its website domains, the brand names to look for, and optionally its competitors. Tracked queries are added afterwards with create_tracked_queries. Before calling it, propose everything to the user at once: brand names from suggest_brand_names, and competitors you suggest with their websites (no tool finds competitors; suggest_brand_names finds the names each one goes by). After the first checks, list_untracked_competitors shows other brands the answers name. Pass a fresh requestId and reuse it if you retry, so a retry never creates a second project.",
+            "description": "Create a project that monitors a brand: its website domains, the brand names to look for, and optionally its competitors. Tracked queries are added afterwards with create_tracked_queries. Before calling it, propose everything to the user at once: brand names from suggest_brand_names, and competitors you suggest with their websites (no tool finds competitors; suggest_brand_names finds the names each one goes by). After the first checks, list_untracked_competitors shows other brands the answers name. Pass a fresh requestId and reuse it if you retry, so a retry never creates a second project. Refused to a member restricted to selected projects.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1938,6 +1956,7 @@
                     },
                     "includeUngroupedQueries": {
                         "type": "boolean",
+                        "description": "Sent alone, returns only the ungrouped row: the tracked queries that belong to no cluster (refused if there are none). Sent with queryClusterIds, adds that row to those clusters. Omit both for every cluster plus the ungrouped row.",
                         "default": false
                     }
                 },
@@ -2096,6 +2115,57 @@
                                     "type": "object",
                                     "additionalProperties": {
                                         "type": "integer"
+                                    }
+                                },
+                                "trackedQueryCountByFamily": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ai": {
+                                            "type": "integer"
+                                        },
+                                        "serp": {
+                                            "type": "integer"
+                                        },
+                                        "shopping": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "ai",
+                                        "serp",
+                                        "shopping"
+                                    ]
+                                },
+                                "checkedQueryCountByFamily": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ai": {
+                                            "type": "integer"
+                                        },
+                                        "serp": {
+                                            "type": "integer"
+                                        },
+                                        "shopping": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "ai",
+                                        "serp",
+                                        "shopping"
+                                    ]
+                                },
+                                "lastCheckedAtByEngine": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ]
                                     }
                                 }
                             },
@@ -2299,7 +2369,7 @@
         {
             "name": "get_job",
             "title": "Get a background job",
-            "description": "The status and, once completed, the result of a background job started by discover_brands, suggest_brand_names, discover_keywords, discover_prompts or start_auto_clustering. Poll it every few seconds until status is \"completed\" or \"failed\"; do not start the job again while it is pending or running.",
+            "description": "The status and, once completed, the result of a background job started by discover_brands, suggest_brand_names, discover_keywords, discover_prompts or start_auto_clustering. Poll it every few seconds until status is \"completed\" or \"failed\"; do not start the job again while it is pending or running. A discover_prompts job usually finishes within 15 minutes and fails with error.code timed_out after about 30 minutes. A failed job carries error.code (timed_out, provider_failed, submission_failed or internal_error) and error.message, which says what to do next.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -2350,6 +2420,33 @@
                             "object",
                             "null"
                         ]
+                    },
+                    "error": {
+                        "description": "Why the job failed, and what to do next. Null unless `status` is `failed`.",
+                        "required": [
+                            "code",
+                            "message"
+                        ],
+                        "properties": {
+                            "code": {
+                                "description": "A stable code for the kind of failure: `timed_out`, `provider_failed`, `submission_failed` or `internal_error`.",
+                                "type": "string",
+                                "enum": [
+                                    "timed_out",
+                                    "provider_failed",
+                                    "submission_failed",
+                                    "internal_error"
+                                ]
+                            },
+                            "message": {
+                                "description": "A fixed, readable explanation of the code. It is the same for every job that failed with that code.",
+                                "type": "string"
+                            }
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -2357,7 +2454,7 @@
                     "type",
                     "status"
                 ],
-                "description": "An asynchronous job and, once it has completed, its result"
+                "description": "An asynchronous job and, once it has completed, its result, or once it has failed, why"
             },
             "annotations": {
                 "title": "Get a background job",
@@ -2932,7 +3029,7 @@
         {
             "name": "get_organization",
             "title": "Get an organization",
-            "description": "An organization's profile, its status, the caller's own role in it, and how many active members, projects and pending invitations it has. Use list_projects first to find the organizationId.",
+            "description": "An organization's profile, its status, the caller's own role in it, and how many active members and pending invitations it has, and how many of its projects the caller can access. Use list_projects first to find the organizationId.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -3014,8 +3111,11 @@
                                 "type": "object",
                                 "properties": {
                                     "total": {
-                                        "description": "Active members",
-                                        "type": "integer"
+                                        "description": "Active members. Null for a member restricted to selected projects.",
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -3041,7 +3141,11 @@
                                 "type": "object",
                                 "properties": {
                                     "pending": {
-                                        "type": "integer"
+                                        "description": "Pending invitations. Null for a member restricted to selected projects.",
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -3072,7 +3176,7 @@
         {
             "name": "get_organization_overview",
             "title": "Organization brand overview",
-            "description": "Latest-snapshot rank-health board across all active projects in an organization: one row per brand (share of voice, mention rate, average mention position, positivity, tracked-query count) ranked by share of voice, plus an organization-level aggregate. This is a current-state snapshot and takes NO date window; for date-ranged comparison, call the per-project tools (e.g. get_project_rank_tracking_stats) for each project id returned here. Answers questions like \"give me a company-wide summary of share of voice and sentiment across all my projects\".",
+            "description": "Latest-snapshot rank-health board across the active projects the caller can access in an organization: one row per brand (share of voice, mention rate, average mention position, positivity, tracked-query count in total and per engine family: AI, SERP, Shopping) ranked by share of voice, plus an organization-level aggregate. This is a current-state snapshot and takes NO date window; for date-ranged comparison, call the per-project tools (e.g. get_project_rank_tracking_stats) for each project id returned here. Answers questions like \"give me a company-wide summary of share of voice and sentiment across all my projects\".",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -3102,7 +3206,20 @@
                                     "type": "string"
                                 },
                                 "trackedQueryCount": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "description": "Configured tracked queries of the project, paused ones included."
+                                },
+                                "aiTrackedQueryCount": {
+                                    "type": "integer",
+                                    "description": "How many of trackedQueryCount run on an AI answer engine (ChatGPT, Claude, Perplexity, Google AI Overview, Google AI Mode)."
+                                },
+                                "serpTrackedQueryCount": {
+                                    "type": "integer",
+                                    "description": "How many of trackedQueryCount run on classic Google SERP."
+                                },
+                                "shoppingTrackedQueryCount": {
+                                    "type": "integer",
+                                    "description": "How many of trackedQueryCount run on Google Shopping."
                                 },
                                 "shareOfVoice": {
                                     "anyOf": [
@@ -3153,7 +3270,10 @@
                                 "projectId",
                                 "name",
                                 "status",
-                                "trackedQueryCount"
+                                "trackedQueryCount",
+                                "aiTrackedQueryCount",
+                                "serpTrackedQueryCount",
+                                "shoppingTrackedQueryCount"
                             ],
                             "additionalProperties": true
                         }
@@ -3390,6 +3510,7 @@
                     },
                     "includeUngroupedQueries": {
                         "type": "boolean",
+                        "description": "Sent alone, restricts to tracked queries that belong to no cluster (refused if there are none). Sent with queryClusterIds, adds them to those clusters. Omit both for all tracked queries.",
                         "default": false
                     }
                 },
@@ -3820,6 +3941,57 @@
                                 "count"
                             ]
                         }
+                    },
+                    "trackedQueryCountByFamily": {
+                        "type": "object",
+                        "properties": {
+                            "ai": {
+                                "type": "integer"
+                            },
+                            "serp": {
+                                "type": "integer"
+                            },
+                            "shopping": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "ai",
+                            "serp",
+                            "shopping"
+                        ]
+                    },
+                    "checkedQueryCountByFamily": {
+                        "type": "object",
+                        "properties": {
+                            "ai": {
+                                "type": "integer"
+                            },
+                            "serp": {
+                                "type": "integer"
+                            },
+                            "shopping": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "ai",
+                            "serp",
+                            "shopping"
+                        ]
+                    },
+                    "lastCheckedAtByEngine": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
                     }
                 },
                 "additionalProperties": true
@@ -4017,6 +4189,7 @@
                     },
                     "includeUngroupedQueries": {
                         "type": "boolean",
+                        "description": "Sent alone, restricts to tracked queries that belong to no cluster (refused if there are none). Sent with queryClusterIds, adds them to those clusters. Omit both for all tracked queries.",
                         "default": false
                     },
                     "competitorIds": {
@@ -4324,6 +4497,7 @@
                     },
                     "includeUngroupedQueries": {
                         "type": "boolean",
+                        "description": "Sent alone, restricts to tracked queries that belong to no cluster (refused if there are none). Sent with queryClusterIds, adds them to those clusters. Omit both for all tracked queries.",
                         "default": false
                     }
                 },
@@ -5229,7 +5403,7 @@
         {
             "name": "get_usage",
             "title": "Get plan and usage",
-            "description": "An organization's subscription, how many tracked queries it has, and how many checks they are projected to run per month. Plan entitlements (tracked-query and check limits) are included for owners only, as in the web app; for other members \"entitlements\" is null. Use it before creating tracked queries or raising check frequency, to stay within the plan.",
+            "description": "An organization's subscription, how many tracked queries its projects the caller can access have, and how many checks they are projected to run per month. Plan entitlements (tracked-query and check limits) are included for owners only, as in the web app; for other members \"entitlements\" is null. For a member restricted to selected projects, the plan, billing cycle, check budget, consumption and deactivation reason in \"subscription\" are null too. Use it before creating tracked queries or raising check frequency, to stay within the plan.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -5245,7 +5419,7 @@
                 "type": "object",
                 "properties": {
                     "subscription": {
-                        "description": "The current subscription contract of an organization",
+                        "description": "The current subscription contract of an organization. For a member restricted to selected projects, the plan, the billing cycle, the check budget, its consumption and the deactivation reason are null.",
                         "required": [
                             "status",
                             "isEntitled"
@@ -5341,7 +5515,7 @@
                                 "format": "date-time"
                             },
                             "deactivationReason": {
-                                "description": "Why the subscription is currently inactive. Null for an active subscription, and meaningless once \"cancelledAt\" is set - the cancellation supersedes it.",
+                                "description": "Why the subscription is currently inactive. Null for an active subscription and for a member restricted to selected projects, and meaningless once \"cancelledAt\" is set - the cancellation supersedes it.",
                                 "type": [
                                     "string",
                                     "null"
@@ -5472,7 +5646,7 @@
                         ],
                         "properties": {
                             "trackedQueryCount": {
-                                "description": "Tracked queries across every project of the organization, archived projects included, counting active and paused queries alike. Never null; 0 means none are configured.",
+                                "description": "Tracked queries across every project of the organization the caller can access, archived projects included, counting active and paused queries alike. Never null; 0 means none are configured.",
                                 "type": "integer",
                                 "minimum": 0
                             }
@@ -5492,7 +5666,7 @@
                                 "minimum": 0
                             },
                             "activeTrackedQueryCount": {
-                                "description": "Active tracked queries the projection was summed over, across every project of the organization, archived projects included. Paused queries are excluded from both figures. Never null.",
+                                "description": "Active tracked queries the projection was summed over, across every project of the organization the caller can access, archived projects included. Paused queries are excluded from both figures. Never null.",
                                 "type": "integer",
                                 "minimum": 0
                             }
@@ -5518,7 +5692,7 @@
         {
             "name": "invite_member",
             "title": "Invite a member",
-            "description": "Invite someone to the organization by email with a role (owner, manager or viewer); they get an email to accept. Inviting an address that already belongs to a member creates nothing and says so. Requires a confirmationToken: call preview_operation with tool \"invite_member\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
+            "description": "Invite someone to the organization by email with a role (owner, manager or viewer) and, optionally, the projects they will reach (projectAccess); they get an email to accept. Inviting an address that already belongs to a member creates nothing and says so. Requires a confirmationToken: call preview_operation with tool \"invite_member\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -5538,6 +5712,29 @@
                     },
                     "confirmationToken": {
                         "type": "string"
+                    },
+                    "projectAccess": {
+                        "type": "object",
+                        "default": null,
+                        "description": "Optional. The projects the invitee will reach once they accept: {\"mode\": \"all\"}, the default, or {\"mode\": \"selected\", \"projectIds\": [...]} with 1 to 500 distinct project ids of this organization from list_projects; a repeated id counts once. An owner always reaches every project, so an owner invitation cannot carry a selection.",
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "all",
+                                    "selected"
+                                ]
+                            },
+                            "projectIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "mode"
+                        ]
                     },
                     "requestId": {
                         "type": [
@@ -5993,7 +6190,7 @@
         {
             "name": "list_keyword_listings",
             "title": "List keyword performance",
-            "description": "One row per tracked query text across all its engine and country variants, with its share of voice, positivity, mention, link, search and shopping positions over the date range (YYYY-MM-DD, inclusive). Filter by engine, country, cluster, status, check frequency, passes or text; sort by any metric. The keyword-level view of a project.",
+            "description": "One row per tracked query text across all its engine and country variants, with its share of voice, positivity, mention, link, search and shopping positions over the date range (YYYY-MM-DD, inclusive). A variant not checked in the range contributes its latest earlier position; carriedPositions says which position figures were carried and from when. Filter by engine, country, cluster, status, check frequency, passes or text; sort by any metric. The keyword-level view of a project.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -6041,6 +6238,7 @@
                     },
                     "includeUngroupedQueries": {
                         "type": "boolean",
+                        "description": "Sent alone, restricts to keywords with variants that belong to no cluster (refused if there are none). Sent with queryClusterIds, adds them to those clusters. Omit both for all keywords.",
                         "default": false
                     },
                     "status": {
@@ -6151,7 +6349,8 @@
                                 "sentimentPositive",
                                 "sentimentNeutral",
                                 "sentimentNegative",
-                                "mentionTypeCounts"
+                                "mentionTypeCounts",
+                                "carriedPositions"
                             ],
                             "properties": {
                                 "keyword": {
@@ -6257,7 +6456,7 @@
                                     "format": "date-time"
                                 },
                                 "avgSerpPosition": {
-                                    "description": "Average position in traditional search over the window. 1-based, LOWER is better.",
+                                    "description": "Average position in traditional search over the window. 1-based, LOWER is better. A variant not checked in the window contributes its latest earlier measurement instead; see carriedPositions.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6265,7 +6464,7 @@
                                     "format": "float"
                                 },
                                 "trendSerp": {
-                                    "description": "Signed improvement in avgSerpPosition against the previous window. Positive is better.",
+                                    "description": "Signed improvement in avgSerpPosition against the previous window. Positive is better. Null when carriedPositions.serp is set.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6273,7 +6472,7 @@
                                     "format": "float"
                                 },
                                 "avgShoppingPosition": {
-                                    "description": "Average position in shopping results over the window. 1-based, LOWER is better.",
+                                    "description": "Average position in shopping results over the window. 1-based, LOWER is better. A variant not checked in the window contributes its latest earlier measurement instead; see carriedPositions.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6281,7 +6480,7 @@
                                     "format": "float"
                                 },
                                 "trendShopping": {
-                                    "description": "Signed improvement in avgShoppingPosition. Positive is better.",
+                                    "description": "Signed improvement in avgShoppingPosition. Positive is better. Null when carriedPositions.shopping is set.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6289,7 +6488,7 @@
                                     "format": "float"
                                 },
                                 "avgMentionPosition": {
-                                    "description": "Average position of the brand mention inside the AI answer. 1-based, LOWER is better.",
+                                    "description": "Average position of the brand mention inside the AI answer. 1-based, LOWER is better. A variant not checked in the window contributes its latest earlier measurement instead; see carriedPositions.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6297,7 +6496,7 @@
                                     "format": "float"
                                 },
                                 "trendMention": {
-                                    "description": "Signed improvement in avgMentionPosition. Positive is better.",
+                                    "description": "Signed improvement in avgMentionPosition. Positive is better. Null when carriedPositions.mention is set.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6305,7 +6504,7 @@
                                     "format": "float"
                                 },
                                 "avgLinkPosition": {
-                                    "description": "Average position of a cited link to the brand. 1-based, LOWER is better.",
+                                    "description": "Average position of a cited link to the brand. 1-based, LOWER is better. A variant not checked in the window contributes its latest earlier measurement instead; see carriedPositions.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6313,7 +6512,7 @@
                                     "format": "float"
                                 },
                                 "trendLink": {
-                                    "description": "Signed improvement in avgLinkPosition. Positive is better.",
+                                    "description": "Signed improvement in avgLinkPosition. Positive is better. Null when carriedPositions.link is set.",
                                     "type": [
                                         "number",
                                         "null"
@@ -6434,6 +6633,126 @@
                                         }
                                     },
                                     "type": "object"
+                                },
+                                "carriedPositions": {
+                                    "description": "Per engine family, whether the position figure includes a measurement from before the window. An active variant with no check of its engine in the window contributes the brand's position in its latest earlier capture, and nothing when the brand was absent from that capture. An entry is null when no variant behind the figure carried. Every other metric stays window-only.",
+                                    "required": [
+                                        "serp",
+                                        "shopping",
+                                        "mention",
+                                        "link"
+                                    ],
+                                    "properties": {
+                                        "serp": {
+                                            "required": [
+                                                "measuredAt",
+                                                "allCarried"
+                                            ],
+                                            "properties": {
+                                                "measuredAt": {
+                                                    "description": "Date (YYYY-MM-DD) of the oldest carried measurement.",
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "allCarried": {
+                                                    "description": "True when every variant behind the figure carried, so it holds no measurement from the window.",
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ]
+                                        },
+                                        "shopping": {
+                                            "required": [
+                                                "measuredAt",
+                                                "allCarried"
+                                            ],
+                                            "properties": {
+                                                "measuredAt": {
+                                                    "description": "Date (YYYY-MM-DD) of the oldest carried measurement.",
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "allCarried": {
+                                                    "description": "True when every variant behind the figure carried, so it holds no measurement from the window.",
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ]
+                                        },
+                                        "mention": {
+                                            "required": [
+                                                "measuredAt",
+                                                "allCarried"
+                                            ],
+                                            "properties": {
+                                                "measuredAt": {
+                                                    "description": "Date (YYYY-MM-DD) of the oldest carried measurement.",
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "allCarried": {
+                                                    "description": "True when every variant behind the figure carried, so it holds no measurement from the window.",
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ]
+                                        },
+                                        "link": {
+                                            "required": [
+                                                "measuredAt",
+                                                "allCarried"
+                                            ],
+                                            "properties": {
+                                                "measuredAt": {
+                                                    "description": "Date (YYYY-MM-DD) of the oldest carried measurement.",
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "allCarried": {
+                                                    "description": "True when every variant behind the figure carried, so it holds no measurement from the window.",
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "shoppingRate": {
+                                    "description": "Share of the Shopping captures in the window where the brand appeared, 0-100; null without a Shopping capture in the window.",
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "trendShoppingRate": {
+                                    "description": "Signed improvement in shoppingRate. Positive is better.",
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "lastCheckedAtByEngine": {
+                                    "description": "Each engine of the matching variants with the ISO 8601 date of its latest completed check; null when none of its variants was checked. A rate of 0 for a checked engine family means the brand is absent.",
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
                                 }
                             },
                             "type": "object"
@@ -6515,7 +6834,9 @@
                                         "role",
                                         "state",
                                         "isActive",
-                                        "joinedAt"
+                                        "joinedAt",
+                                        "projectAccessMode",
+                                        "projectIds"
                                     ],
                                     "properties": {
                                         "id": {
@@ -6548,6 +6869,22 @@
                                         "joinedAt": {
                                             "type": "string",
                                             "format": "date-time"
+                                        },
+                                        "projectAccessMode": {
+                                            "description": "Which projects of the organization the member reaches: every project, or only projectIds",
+                                            "type": "string",
+                                            "enum": [
+                                                "all",
+                                                "selected"
+                                            ]
+                                        },
+                                        "projectIds": {
+                                            "description": "The projects a selected access reaches; empty when the mode is all",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "format": "uuid"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -6657,7 +6994,7 @@
         {
             "name": "list_projects",
             "title": "List organizations and projects",
-            "description": "List every organization the caller belongs to and its active projects. Call this FIRST: the returned (organizationId, projectId) pairs are required by every other tool.",
+            "description": "List every organization the caller belongs to and the active projects they can access in it. Call this FIRST: the returned (organizationId, projectId) pairs are required by every other tool.",
             "inputSchema": {
                 "type": "object",
                 "properties": {}
@@ -7277,7 +7614,8 @@
                             "cancel_invitation",
                             "change_member_role",
                             "suspend_member",
-                            "reactivate_member"
+                            "reactivate_member",
+                            "set_member_project_access"
                         ]
                     },
                     "arguments": {
@@ -7533,6 +7871,22 @@
                     "joinedAt": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "projectAccessMode": {
+                        "description": "Which projects of the organization the member reaches: every project, or only projectIds",
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "selected"
+                        ]
+                    },
+                    "projectIds": {
+                        "description": "The projects a selected access reaches; empty when the mode is all",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
                     }
                 },
                 "required": [
@@ -7541,7 +7895,9 @@
                     "role",
                     "state",
                     "isActive",
-                    "joinedAt"
+                    "joinedAt",
+                    "projectAccessMode",
+                    "projectIds"
                 ],
                 "description": "A membership of an organization"
             },
@@ -8444,6 +8800,56 @@
                                             "type": "null"
                                         }
                                     ]
+                                },
+                                "lastHadMention": {
+                                    "anyOf": [
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastHadLink": {
+                                    "anyOf": [
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastHadAppearance": {
+                                    "anyOf": [
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastHadSerpResult": {
+                                    "anyOf": [
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "lastHadShoppingResult": {
+                                    "anyOf": [
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
                                 }
                             },
                             "required": [
@@ -8470,6 +8876,127 @@
                 "readOnlyHint": true,
                 "destructiveHint": false,
                 "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "set_member_project_access",
+            "title": "Set a member's project access",
+            "description": "Set which projects of the organization a member reaches: every project (mode \"all\") or only the projects in projectIds (mode \"selected\"); a project outside a selection answers as if it did not exist. It applies from the member's next request, including through their API keys and MCP connections. An owner always reaches every project and cannot be limited. memberId is the member id from list_members, not the user id; projectIds come from list_projects. Requires a confirmationToken: call preview_operation with tool \"set_member_project_access\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees. Needs the organization:manage permission and the owner role.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "memberId": {
+                        "type": "string"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "selected"
+                        ]
+                    },
+                    "confirmationToken": {
+                        "type": "string"
+                    },
+                    "projectIds": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "default": null,
+                        "description": "The projects a \"selected\" access reaches: at least one and at most 500 distinct projects, all of this organization; a repeated id counts once. Leave it out for \"all\".",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "requestId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "memberId",
+                    "mode",
+                    "confirmationToken"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "userId": {
+                        "description": "The user this membership belongs to",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "owner",
+                            "manager",
+                            "viewer"
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended"
+                        ]
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "joinedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "projectAccessMode": {
+                        "description": "Which projects of the organization the member reaches: every project, or only projectIds",
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "selected"
+                        ]
+                    },
+                    "projectIds": {
+                        "description": "The projects a selected access reaches; empty when the mode is all",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "userId",
+                    "role",
+                    "state",
+                    "isActive",
+                    "joinedAt",
+                    "projectAccessMode",
+                    "projectIds"
+                ],
+                "description": "A membership of an organization"
+            },
+            "annotations": {
+                "title": "Set a member's project access",
+                "readOnlyHint": false,
+                "destructiveHint": true,
+                "idempotentHint": false,
                 "openWorldHint": false
             }
         },
@@ -8720,7 +9247,7 @@
         {
             "name": "suggest_brand_names",
             "title": "Suggest brand names",
-            "description": "Start a background job that proposes the names a brand is mentioned by, from its name and website - the first step of setting up a project, before it exists. Poll get_job for the result and confirm the names with the user before create_project.",
+            "description": "Start a background job that proposes the names a brand is mentioned by, from its name and website - the first step of setting up a project, before it exists. Poll get_job for the result and confirm the names with the user before create_project. Refused to a member restricted to selected projects.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -8868,6 +9395,22 @@
                     "joinedAt": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "projectAccessMode": {
+                        "description": "Which projects of the organization the member reaches: every project, or only projectIds",
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "selected"
+                        ]
+                    },
+                    "projectIds": {
+                        "description": "The projects a selected access reaches; empty when the mode is all",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
                     }
                 },
                 "required": [
@@ -8876,7 +9419,9 @@
                     "role",
                     "state",
                     "isActive",
-                    "joinedAt"
+                    "joinedAt",
+                    "projectAccessMode",
+                    "projectIds"
                 ],
                 "description": "A membership of an organization"
             },
@@ -9110,11 +9655,10 @@
                     },
                     "brandProfile": {
                         "type": [
-                            "null",
-                            "object"
+                            "object",
+                            "null"
                         ],
                         "default": null,
-                        "description": "Replaces the website domains and brand names the project is monitored for.",
                         "properties": {
                             "websiteDomains": {
                                 "type": "array",
@@ -9132,7 +9676,8 @@
                         "required": [
                             "websiteDomains",
                             "brandNames"
-                        ]
+                        ],
+                        "description": "Replaces the website domains and brand names the project is monitored for."
                     }
                 },
                 "required": [
