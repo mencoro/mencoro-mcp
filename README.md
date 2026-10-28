@@ -21,8 +21,8 @@
 
 Mencoro tracks how brands surface in AI answer engines — ChatGPT, Perplexity, Google AI Overview
 and AI Mode — and in Google Search and Shopping. The MCP server exposes that data to any MCP client,
-and lets it manage projects, tracked queries, clusters and organizations, as **66 tools** (31 that
-read, 35 that change something) and **20 prompts**. One of them, `get_mencoro_guide`, answers
+and lets it manage projects, tracked queries, clusters and organizations, as **67 tools** (31 that
+read, 36 that change something) and **20 prompts**. One of them, `get_mencoro_guide`, answers
 questions about Mencoro itself and works without signing in.
 
 The server is **hosted**. Most clients should connect to it directly:
@@ -306,9 +306,10 @@ the plan described has changed. Creating tools, job starters and confirmable too
 | `update_organization` | `organization:manage` | C | Change an organization's name, description or contact email. |
 | `archive_organization` | `organization:manage` | C | Archive an organization. |
 | `restore_organization` | `organization:manage` | C | Restore an archived organization. |
-| `invite_member` | `organization:manage` | C | Invite someone by email with a role. |
+| `invite_member` | `organization:manage` | C | Invite someone by email with a role and, optionally, the projects they will reach. |
 | `cancel_invitation` | `organization:manage` | C | Cancel a pending invitation. |
 | `change_member_role` | `organization:manage` | C | Give a member another role. |
+| `set_member_project_access` | `organization:manage` | C | Limit a member to selected projects, or give them every project back. |
 | `suspend_member` | `organization:manage` | C | Suspend a member, taking their access away. |
 | `reactivate_member` | `organization:manage` | C | Give a suspended member their access back. |
 

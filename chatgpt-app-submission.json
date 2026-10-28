@@ -483,7 +483,7 @@
         "openWorldHint": true
       },
       "justifications": {
-        "read_only_justification": "Creates an invitation for an email address to join the organization with a role.",
+        "read_only_justification": "Creates an invitation for an email address to join the organization with a role and, optionally, the projects the member will reach.",
         "open_world_justification": "Sends an invitation email to the address the user supplies, who may be outside Mencoro.",
         "destructive_justification": "Adds a pending invitation without changing existing members; an address that already belongs to a member creates nothing. It runs only with a confirmation token from a preview the user approved."
       }
@@ -702,6 +702,18 @@
         "read_only_justification": "Searches, filters, sorts, and paginates existing tracked queries and their latest stored metrics without creating, editing, pausing, resuming, or executing queries.",
         "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
         "destructive_justification": "Does not delete tracked queries, overwrite their configuration or metrics, or change their active or paused status."
+      }
+    },
+    "set_member_project_access": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Sets which projects of the organization a member can reach: every project or a selected list.",
+        "open_world_justification": "Changes only the membership in Mencoro and contacts no external system.",
+        "destructive_justification": "Marked destructive because it overwrites the member's project access, and a narrower selection removes projects from the member. Another call can change it back, and it runs only with a confirmation token from a preview the user approved."
       }
     },
     "set_tracked_query_check_frequency": {
