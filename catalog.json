@@ -498,6 +498,22 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "projectAccessMode": {
+                        "description": "Which projects of the organization the invitee reaches on accepting: every project, or only projectIds",
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "selected"
+                        ]
+                    },
+                    "projectIds": {
+                        "description": "The projects a selected access reaches, limited to those still in the organization; empty when the mode is all. It may be empty on selected once its projects left the organization, which grants nothing",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
                     }
                 },
                 "required": [
@@ -506,7 +522,9 @@
                     "role",
                     "state",
                     "createdAt",
-                    "expiresAt"
+                    "expiresAt",
+                    "projectAccessMode",
+                    "projectIds"
                 ],
                 "description": "An invitation to join an organization"
             },
@@ -5779,7 +5797,9 @@
                                     "role",
                                     "state",
                                     "createdAt",
-                                    "expiresAt"
+                                    "expiresAt",
+                                    "projectAccessMode",
+                                    "projectIds"
                                 ],
                                 "properties": {
                                     "id": {
@@ -5822,6 +5842,22 @@
                                             "null"
                                         ],
                                         "format": "date-time"
+                                    },
+                                    "projectAccessMode": {
+                                        "description": "Which projects of the organization the invitee reaches on accepting: every project, or only projectIds",
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "selected"
+                                        ]
+                                    },
+                                    "projectIds": {
+                                        "description": "The projects a selected access reaches, limited to those still in the organization; empty when the mode is all. It may be empty on selected once its projects left the organization, which grants nothing",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -6915,7 +6951,9 @@
                                                 "role",
                                                 "state",
                                                 "createdAt",
-                                                "expiresAt"
+                                                "expiresAt",
+                                                "projectAccessMode",
+                                                "projectIds"
                                             ],
                                             "properties": {
                                                 "id": {
@@ -6958,6 +6996,22 @@
                                                         "null"
                                                     ],
                                                     "format": "date-time"
+                                                },
+                                                "projectAccessMode": {
+                                                    "description": "Which projects of the organization the invitee reaches on accepting: every project, or only projectIds",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "all",
+                                                        "selected"
+                                                    ]
+                                                },
+                                                "projectIds": {
+                                                    "description": "The projects a selected access reaches, limited to those still in the organization; empty when the mode is all. It may be empty on selected once its projects left the organization, which grants nothing",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "format": "uuid"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
