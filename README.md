@@ -475,7 +475,7 @@ npm run check:catalog   # asks the hosted server whether catalog.json is still c
 ```
 
 Tests run the TypeScript sources directly through Node's type stripping, so development needs
-Node 22.18 or newer. The published package targets Node 20.19+, which CI verifies separately
+Node 22.18 or newer. The published package targets Node 22+, which CI verifies separately
 against the built artifact.
 
 Releases are cut by tagging. `npm version <patch|minor|major>`, mirror the new version into

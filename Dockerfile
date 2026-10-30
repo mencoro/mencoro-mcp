@@ -1,4 +1,4 @@
-FROM node:24-alpine@sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81 AS build
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94 AS build
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN npm ci
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
-FROM node:24-alpine@sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94
 
 # io.modelcontextprotocol.server.name is how the MCP registry proves this image
 # belongs to the server named in server.json; it must match that name exactly.
