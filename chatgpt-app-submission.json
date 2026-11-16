@@ -188,6 +188,18 @@
         "destructive_justification": "Creates only the job and its proposal; no brand or competitor name changes until the user applies the chosen ones."
       }
     },
+    "discover_competitors": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background job that proposes competitors for a website in one market; nothing is added to a project until the user creates it with the chosen ones or adds them with create_competitor.",
+        "open_world_justification": "The job sends the website and its market to Mencoro's keyword service, which queries a search-data provider and a web-searching AI model on the user's behalf.",
+        "destructive_justification": "Creates only the job and its proposal; no project or competitor changes until the user applies the chosen ones."
+      }
+    },
     "discover_keywords": {
       "annotations": {
         "readOnlyHint": false,
@@ -258,6 +270,18 @@
         "read_only_justification": "Calculates shared-answer counts, relative mention positions, and win rates from stored brand and competitor mentions without modifying results or running new checks.",
         "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
         "destructive_justification": "Does not delete competitor records, overwrite mention positions, or modify stored AI responses."
+      }
+    },
+    "get_growwer_offers": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists which media cited in one tracked query's stored answers and search results Growwer sells and at what price, and the organization's Growwer orders for them, without buying or requesting media or changing any order, tracked query or stored answer.",
+        "open_world_justification": "Only reads: it asks Growwer's catalogue for the prices of hosts Mencoro has not cached in the last hour and reads the orders of the Growwer account the organization connected; it places no order or request at Growwer, never visits the cited sites and sends no prompts to AI providers.",
+        "destructive_justification": "Does not change tracked queries, stored answers, Growwer orders or anything on the cited sites."
       }
     },
     "get_job": {
@@ -366,6 +390,18 @@
         "read_only_justification": "Computes a project summary of positions, share of voice, sentiment, and trends from stored monitoring data without changing results or starting monitoring jobs.",
         "open_world_justification": "Uses only stored data within an authorized Mencoro project and does not browse the web, contact AI or search providers, or access arbitrary external URLs.",
         "destructive_justification": "Does not delete or overwrite monitoring results, modify tracked queries, or change project configuration."
+      }
+    },
+    "get_project_sources": {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Aggregates the hosts a project's stored AI answers cite and its stored search results list, with the tracked queries where each appeared without the brand, without generating answers or changing monitoring data.",
+        "open_world_justification": "Reads the project's stored answers and search results and the Growwer prices Mencoro refreshes daily, and asks Growwer for the orders of the account the organization connected; it places no order or request at Growwer, never visits the cited sites and sends no prompts to AI providers.",
+        "destructive_justification": "Does not change stored answers, search results, Growwer orders or anything on the cited sites."
       }
     },
     "get_query_movers": {
@@ -642,6 +678,18 @@
         "read_only_justification": "Records a report that a captured AI answer was analysed wrongly, for Mencoro to review.",
         "open_world_justification": "Writes a report inside Mencoro and contacts no external system.",
         "destructive_justification": "Adds a report without changing the answer, its analysis or any metric."
+      }
+    },
+    "request_growwer_media": {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Sends a media request for one host to Growwer, which adds the host as requested to the Growwer project whose website is the project's; Mencoro records it once Growwer accepts.",
+        "open_world_justification": "Sends the request to Growwer, an outside marketplace, through the Growwer account an owner connected, and Growwer may tell the media's sellers a buyer is interested.",
+        "destructive_justification": "Adds a request without deleting anything; nothing is bought or paid, and a host already requested for the project through Mencoro is not sent again."
       }
     },
     "restore_organization": {

@@ -879,7 +879,7 @@
         {
             "name": "create_project",
             "title": "Create a project",
-            "description": "Create a project that monitors a brand: its website domains, the brand names to look for, and optionally its competitors. Tracked queries are added afterwards with create_tracked_queries. Before calling it, propose everything to the user at once: brand names from suggest_brand_names, and competitors you suggest with their websites (no tool finds competitors; suggest_brand_names finds the names each one goes by). After the first checks, list_untracked_competitors shows other brands the answers name. Pass a fresh requestId and reuse it if you retry, so a retry never creates a second project. Refused to a member restricted to selected projects.",
+            "description": "Create a project that monitors a brand: its website domains, the brand names to look for, and optionally its competitors. Tracked queries are added afterwards with create_tracked_queries. Before calling it, propose everything to the user at once: brand names from suggest_brand_names, and competitors from discover_competitors (poll get_job; each comes with its website and names); if that job is refused, fails or finds none, competitors you suggest with their websites instead (suggest_brand_names finds the names each one goes by), without holding up the setup. Pass the chosen competitors here: one added later only counts in checks from then on. After the first checks, list_untracked_competitors shows other brands the answers name. Pass a fresh requestId and reuse it if you retry, so a retry never creates a second project. Refused to a member restricted to selected projects.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1482,6 +1482,104 @@
             },
             "annotations": {
                 "title": "Discover more brand names",
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": true
+            }
+        },
+        {
+            "name": "discover_competitors",
+            "title": "Discover competitors",
+            "description": "Start a background job that finds up to limit businesses (default 3, at most 5) competing with a website in one market: domains ranking on Google for the same searches, each with the brand name people use and up to 3 aliases. Pass the project's existing competitor domains in existingCompetitorDomains so they are not proposed again. Poll get_job for the result and show it to the user. During project setup, pass the chosen ones in create_project's competitors: a competitor added later with create_competitor only counts in answers captured from then on. An empty list is a valid answer. Country is ISO 3166-1 alpha-2 and language ISO 639-1. Requires an active subscription; refused to a member restricted to selected projects.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "domain": {
+                        "type": "string",
+                        "description": "The website whose competitors to find, as a host or URL",
+                        "maxLength": 2048
+                    },
+                    "country": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "language": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "brandName": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "The brand name of the website, when known",
+                        "maxLength": 255
+                    },
+                    "existingCompetitorDomains": {
+                        "type": "array",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "maxLength": 2048
+                        },
+                        "maxItems": 100
+                    },
+                    "limit": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ],
+                        "default": null,
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "requestId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "domain",
+                    "country",
+                    "language"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "description": "Pass it to get_job. May name a job started by an earlier, equivalent call.",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "deduplicated": {
+                        "description": "Whether this call joined a job that was already running instead of starting one",
+                        "type": "boolean"
+                    },
+                    "nextStep": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "jobId",
+                    "deduplicated",
+                    "nextStep"
+                ]
+            },
+            "annotations": {
+                "title": "Discover competitors",
                 "readOnlyHint": false,
                 "destructiveHint": false,
                 "idempotentHint": false,
@@ -2385,9 +2483,350 @@
             }
         },
         {
+            "name": "get_growwer_offers",
+            "title": "Get Growwer offers for a tracked query's cited media",
+            "description": "Which of the media one tracked query's captures cite are sold on Growwer, a sponsored-content marketplace, and at what price. The media are the third-party sites its AI answers cite (AI engines) or its search results list (traditional search) within the window, never the brand's or a tracked competitor's; shopping queries have none. Each item gives the host, the Growwer domain matched exactly to it, whether it is sold, every product (post, link_addition) and link type (dofollow, nofollow, citation) price in minor units of currency excluding VAT, the cheapest as fromPrice, and whether its posts are labelled as advertising. status \"unavailable\" means Growwer could not be asked and only recently cached hosts are listed. Each item also lists the organization's own Growwer orders for that media (id, type, state code, price in minor units, delivery URL, publication and creation dates), read from the Growwer account an owner connected in Mencoro's settings and only from one Growwer project whose website is this project's: growwerProjects lists those projects (id, name, url), and growwerProjectId is the one the orders come from, the first unless the growwerProjectId argument names another of them (any other is refused as growwer_project_not_matched). Without an offer Growwer answered for (no item, or status \"unavailable\") the account is not read: growwerProjects is empty, growwerProjectId null and the argument unchecked. ordersStatus is \"ok\", \"not_connected\", \"revoked\" (an owner must connect again in the app) or \"unavailable\" (Growwer did not answer, or a connected account was not read), and orders are empty unless it is \"ok\". Read only: purchases happen on Growwer itself, and no tool buys or connects a Growwer account. Dates are YYYY-MM-DD and default to the whole retention window.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "trackedQueryId": {
+                        "type": "string",
+                        "description": "a tracked query UUID from search_tracked_queries (items[].id)",
+                        "format": "uuid"
+                    },
+                    "dateFrom": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    "dateTo": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    "growwerProjectId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "description": "one of growwerProjects[].id from an earlier call; omitted, the first",
+                        "default": null,
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "trackedQueryId"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "ok",
+                            "unavailable"
+                        ]
+                    },
+                    "ordersStatus": {
+                        "type": "string",
+                        "enum": [
+                            "ok",
+                            "not_connected",
+                            "revoked",
+                            "unavailable"
+                        ]
+                    },
+                    "growwerProjectId": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "growwerProjects": {
+                        "type": "array",
+                        "description": "The connected account's Growwer projects whose website is this project's, as the history page's project picker lists them; empty when the account is not connected or could not be read, and when it was not read because no offer Growwer answered for is listed.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "url"
+                            ]
+                        }
+                    },
+                    "offers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "input": {
+                                    "type": "string",
+                                    "description": "The cited host, lowercased and without a leading www."
+                                },
+                                "growwerDomain": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "mediaIds": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "available": {
+                                    "type": "boolean"
+                                },
+                                "prices": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "product": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "post",
+                                                    "link_addition"
+                                                ]
+                                            },
+                                            "linkType": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "dofollow",
+                                                    "nofollow",
+                                                    "citation"
+                                                ]
+                                            },
+                                            "amount": {
+                                                "type": "integer",
+                                                "description": "Minor units of currency, excluding VAT."
+                                            },
+                                            "currency": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "product",
+                                            "linkType",
+                                            "amount",
+                                            "currency"
+                                        ]
+                                    }
+                                },
+                                "advertisingLabellingPolicy": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string",
+                                            "enum": [
+                                                "always",
+                                                "never"
+                                            ]
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "fromPrice": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "product": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "post",
+                                                        "link_addition"
+                                                    ]
+                                                },
+                                                "linkType": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "dofollow",
+                                                        "nofollow",
+                                                        "citation"
+                                                    ]
+                                                },
+                                                "amount": {
+                                                    "type": "integer",
+                                                    "description": "Minor units of currency, excluding VAT."
+                                                },
+                                                "currency": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "product",
+                                                "linkType",
+                                                "amount",
+                                                "currency"
+                                            ]
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "vatIncluded": {
+                                    "type": "boolean"
+                                },
+                                "orders": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "description": "Growwer's order state code."
+                                            },
+                                            "price": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "amount": {
+                                                                "type": "integer",
+                                                                "description": "Minor units of currency."
+                                                            },
+                                                            "currency": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "amount",
+                                                            "currency"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ]
+                                            },
+                                            "projectId": {
+                                                "type": "string",
+                                                "description": "The Growwer project the order belongs to."
+                                            },
+                                            "mediaId": {
+                                                "type": "string"
+                                            },
+                                            "deliveryUrl": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ]
+                                            },
+                                            "publishedAt": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ]
+                                            },
+                                            "createdAt": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "type",
+                                            "state",
+                                            "price",
+                                            "projectId",
+                                            "mediaId",
+                                            "deliveryUrl",
+                                            "publishedAt",
+                                            "createdAt"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "input",
+                                "growwerDomain",
+                                "mediaIds",
+                                "available",
+                                "prices",
+                                "advertisingLabellingPolicy",
+                                "fromPrice",
+                                "vatIncluded",
+                                "orders"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "status",
+                    "ordersStatus",
+                    "growwerProjectId",
+                    "growwerProjects",
+                    "offers"
+                ]
+            },
+            "annotations": {
+                "title": "Get Growwer offers for a tracked query's cited media",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
             "name": "get_job",
             "title": "Get a background job",
-            "description": "The status and, once completed, the result of a background job started by discover_brands, suggest_brand_names, discover_keywords, discover_prompts or start_auto_clustering. Poll it every few seconds until status is \"completed\" or \"failed\"; do not start the job again while it is pending or running. A discover_prompts job usually finishes within 15 minutes and fails with error.code timed_out after about 30 minutes. A failed job carries error.code (timed_out, provider_failed, submission_failed or internal_error) and error.message, which says what to do next.",
+            "description": "The status and, once completed, the result of a background job started by discover_brands, suggest_brand_names, discover_competitors, discover_keywords, discover_prompts or start_auto_clustering. Poll it every few seconds until status is \"completed\" or \"failed\"; do not start the job again while it is pending or running. A discover_prompts job usually finishes within 15 minutes and fails with error.code timed_out after about 30 minutes. A failed job carries error.code (timed_out, provider_failed, submission_failed or internal_error) and error.message, which says what to do next.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -2418,7 +2857,8 @@
                             "keywords",
                             "query_clustering",
                             "brand_discovery",
-                            "brand_name_suggestion"
+                            "brand_name_suggestion",
+                            "competitor_discovery"
                         ]
                     },
                     "status": {
@@ -4016,6 +4456,969 @@
             },
             "annotations": {
                 "title": "Project rank-tracking overview",
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            }
+        },
+        {
+            "name": "get_project_sources",
+            "title": "Project sources and visibility opportunities",
+            "description": "The hosts a project's AI answers cite and its SERPs list in a date window, as the Fuentes tab shows them, with each host's gap queries: the tracked queries with at least one response (an AI answer, each pass counted, or a SERP) that listed the host without the brand, meaning an answer that neither names the brand nor cites its site, or a SERP where no own domain ranks. view=opportunities (default) lists third-party hosts with a gap, most gap queries first: the sites to get the brand onto; view=all lists every host, the brand's and competitors' own sites included (ownership says which); view=cited-you lists third-party hosts cited in AI answers that featured the brand. counts gives each view's host count under the same filters. Pass host to get one host instead: its gap queries (one row per tracked query with the engines of its gap responses), the URLs cited, each list capped at 100 with gapQueriesTotal and citedUrlsTotal counting every row, and an excerpt of the latest answer citing it. Each third-party host carries growwer: whether Growwer sells a link on it (state offer, no_offer, or pending while Growwer has not answered for it yet), its starting price excluding VAT, the stored answer's age (stale after 48 hours) and the organization's own Growwer orders on that media (an order means one is already in progress), whether the organization already requested that media from Growwer (requested, requestedAt) and whether request_growwer_media can request it (canRequest; when false, the media is requested on Growwer's own site); onlyGrowwerOffers=true keeps the hosts Growwer sells, in the rows and in every count, and counts.growwerOffers counts them in the view. Offers are refreshed daily from Growwer, never asked for during this call; get_growwer_offers asks Growwer live for a tracked query's media. Dates must fall within the data retention window, and the period spans at most 92 days, both dates counted. Answers questions like \"which sites should I get mentioned on\", \"where do AI answers cite my competitors but not me\" or \"which media cite me\".",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "dateFrom": {
+                        "type": "string"
+                    },
+                    "dateTo": {
+                        "type": "string"
+                    },
+                    "engines": {
+                        "type": "array",
+                        "description": "allowed values: chatgpt, claude, perplexity, google_ai_overview, google_ai_mode, google_serp, google_shopping; google_shopping lists no hosts",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "chatgpt",
+                                "claude",
+                                "perplexity",
+                                "google_ai_overview",
+                                "google_ai_mode",
+                                "google_serp",
+                                "google_shopping"
+                            ]
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "description": "ISO-3166 alpha-2 country codes (e.g. \"US\", \"GB\", \"DE\"); a project's configured codes are listed by get_available_filters",
+                        "default": [],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "queryClusterIds": {
+                        "type": "array",
+                        "description": "restrict to these keyword clusters",
+                        "default": [],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "includeUngroupedQueries": {
+                        "type": "boolean",
+                        "description": "Sent alone, keeps only the tracked queries that belong to no cluster (refused if there are none). Sent with queryClusterIds, adds them to those clusters' queries. Omit both for every query.",
+                        "default": false
+                    },
+                    "competitorId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "description": "UUID of a tracked competitor: keep only the responses that also name or list it; competitor UUIDs are listed by get_available_filters (competitors[].id)",
+                        "default": null,
+                        "format": "uuid"
+                    },
+                    "host": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "description": "one host (e.g. \"example.com\"; \"www.\" and case are ignored, a URL, or a host followed by a port or a path, is reduced to its host) to return its detail instead of the list",
+                        "default": null
+                    },
+                    "view": {
+                        "type": "string",
+                        "description": "opportunities (default), all or cited-you; ignored with host",
+                        "default": "opportunities",
+                        "enum": [
+                            "opportunities",
+                            "all",
+                            "cited-you"
+                        ]
+                    },
+                    "search": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "description": "case-insensitive substring of the host; narrows the rows and the counts; ignored with host",
+                        "default": null,
+                        "maxLength": 255
+                    },
+                    "sortBy": {
+                        "type": "string",
+                        "description": "gapQueries (default), citingQueries, citedYouQueries, responses, citations, avgPosition or host; ignored with host",
+                        "default": "gapQueries",
+                        "enum": [
+                            "gapQueries",
+                            "citingQueries",
+                            "citedYouQueries",
+                            "responses",
+                            "citations",
+                            "avgPosition",
+                            "host"
+                        ]
+                    },
+                    "sortOrder": {
+                        "type": "string",
+                        "description": "desc (default) or asc; ignored with host",
+                        "default": "desc",
+                        "enum": [
+                            "desc",
+                            "asc"
+                        ]
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 20,
+                        "minimum": 1,
+                        "maximum": 100
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "default": 0,
+                        "minimum": 0
+                    },
+                    "onlyGrowwerOffers": {
+                        "type": "boolean",
+                        "description": "keep only the hosts Growwer sells (growwer.state offer), in the rows and in every count; ignored with host",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "dateFrom",
+                    "dateTo"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "sources": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "host": {
+                                    "type": "string"
+                                },
+                                "ownership": {
+                                    "type": "string",
+                                    "enum": [
+                                        "brand",
+                                        "competitor",
+                                        "third_party"
+                                    ]
+                                },
+                                "competitorId": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "competitorName": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "gapQueryCount": {
+                                    "type": "integer",
+                                    "description": "Tracked queries with at least one response that listed the host without the brand."
+                                },
+                                "citingQueryCount": {
+                                    "type": "integer",
+                                    "description": "Tracked queries with at least one response that listed the host."
+                                },
+                                "citedYouQueryCount": {
+                                    "type": "integer",
+                                    "description": "Tracked queries with at least one AI answer that cited the host and featured the brand."
+                                },
+                                "responseCount": {
+                                    "type": "integer",
+                                    "description": "AI answers (each pass counted) and SERPs that listed the host."
+                                },
+                                "citationCount": {
+                                    "type": "integer"
+                                },
+                                "avgPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based position of the host in each response's citations or results, averaged; LOWER is better."
+                                },
+                                "engines": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "inAi": {
+                                    "type": "boolean"
+                                },
+                                "inSerp": {
+                                    "type": "boolean"
+                                },
+                                "coCitedCompetitors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "competitorId": {
+                                                "type": "string"
+                                            },
+                                            "competitorName": {
+                                                "type": "string"
+                                            },
+                                            "responseCount": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                },
+                                "growwer": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "state": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "offer",
+                                                        "no_offer",
+                                                        "pending"
+                                                    ],
+                                                    "description": "offer: Growwer sells a link on this media; no_offer: it does not; pending: Growwer has not answered for this host yet."
+                                                },
+                                                "growwerDomain": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                },
+                                                "mediaIds": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "fromPrice": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "product": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "post",
+                                                                        "link_addition"
+                                                                    ]
+                                                                },
+                                                                "linkType": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "dofollow",
+                                                                        "nofollow",
+                                                                        "citation"
+                                                                    ]
+                                                                },
+                                                                "amount": {
+                                                                    "type": "integer",
+                                                                    "description": "Minor units of currency, excluding VAT."
+                                                                },
+                                                                "currency": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "product",
+                                                                "linkType",
+                                                                "amount",
+                                                                "currency"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ],
+                                                    "description": "The cheapest of Growwer's base prices, the price a buyer starts from; null unless state is offer."
+                                                },
+                                                "vatIncluded": {
+                                                    "type": "boolean"
+                                                },
+                                                "advertisingLabellingPolicy": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                },
+                                                "checkedAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ],
+                                                    "description": "When Growwer last answered for this host; null while pending."
+                                                },
+                                                "stale": {
+                                                    "type": "boolean",
+                                                    "description": "The stored answer is 48 hours old or more: the price may have changed."
+                                                },
+                                                "orders": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "type": {
+                                                                "type": "string"
+                                                            },
+                                                            "state": {
+                                                                "type": "string",
+                                                                "description": "Growwer's order state code."
+                                                            },
+                                                            "price": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "amount": {
+                                                                                "type": "integer",
+                                                                                "description": "Minor units of currency."
+                                                                            },
+                                                                            "currency": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "amount",
+                                                                            "currency"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "type": "null"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "projectId": {
+                                                                "type": "string",
+                                                                "description": "The Growwer project the order belongs to."
+                                                            },
+                                                            "mediaId": {
+                                                                "type": "string"
+                                                            },
+                                                            "deliveryUrl": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "null"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "publishedAt": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "null"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "type",
+                                                            "state",
+                                                            "price",
+                                                            "projectId",
+                                                            "mediaId",
+                                                            "deliveryUrl",
+                                                            "publishedAt",
+                                                            "createdAt"
+                                                        ]
+                                                    },
+                                                    "description": "The organization's own Growwer orders on this media, of the Growwer project matched to the project's website; one means an order is already in progress. Empty unless growwerOrders.status is ok."
+                                                },
+                                                "requested": {
+                                                    "type": "boolean",
+                                                    "description": "The organization already asked Growwer for this media for the project, with request_growwer_media or from the app."
+                                                },
+                                                "requestedAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ],
+                                                    "description": "When it was first requested; null unless requested."
+                                                },
+                                                "canRequest": {
+                                                    "type": "boolean",
+                                                    "description": "Whether request_growwer_media can ask Growwer for it: the Growwer connection can send requests and, when the account was read, a Growwer project has the project's website, and the host is one a request takes (not an IPv6 address). False: the media is requested on Growwer's own site."
+                                                }
+                                            },
+                                            "required": [
+                                                "state",
+                                                "mediaIds",
+                                                "fromPrice",
+                                                "stale",
+                                                "orders",
+                                                "requested",
+                                                "requestedAt",
+                                                "canRequest"
+                                            ]
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "Growwer's offer for a third-party host; null for the brand's and competitors' own sites."
+                                }
+                            },
+                            "required": [
+                                "host",
+                                "ownership",
+                                "gapQueryCount",
+                                "citingQueryCount",
+                                "responseCount"
+                            ],
+                            "additionalProperties": true
+                        }
+                    },
+                    "total": {
+                        "type": "integer",
+                        "description": "Hosts in the requested view."
+                    },
+                    "counts": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "integer"
+                            },
+                            "all": {
+                                "type": "integer"
+                            },
+                            "allAi": {
+                                "type": "integer"
+                            },
+                            "allSerp": {
+                                "type": "integer"
+                            },
+                            "citedYou": {
+                                "type": "integer"
+                            },
+                            "growwerOffers": {
+                                "type": "integer",
+                                "description": "Hosts of the requested view Growwer sells."
+                            }
+                        }
+                    },
+                    "growwerOrders": {
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "ok",
+                                    "not_connected",
+                                    "revoked",
+                                    "unavailable",
+                                    "not_read"
+                                ],
+                                "description": "Whether the organization's Growwer orders were read: ok, not_connected (no Growwer account connected), revoked (the organization must connect it again), unavailable (the account could not be read) or not_read (connected, but there was nothing to read the orders for: no Growwer media among the sources shown, or a project without a brand profile)."
+                            },
+                            "growwerProjectId": {
+                                "anyOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "description": "The Growwer project matched to the project's website the orders come from; null when none matched or the account was not read."
+                            }
+                        },
+                        "required": [
+                            "status",
+                            "growwerProjectId"
+                        ]
+                    },
+                    "source": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "ownership": {
+                                "type": "string",
+                                "enum": [
+                                    "brand",
+                                    "competitor",
+                                    "third_party"
+                                ]
+                            },
+                            "competitorId": {
+                                "anyOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "competitorName": {
+                                "anyOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "gapQueryCount": {
+                                "type": "integer",
+                                "description": "Tracked queries with at least one response that listed the host without the brand."
+                            },
+                            "citingQueryCount": {
+                                "type": "integer",
+                                "description": "Tracked queries with at least one response that listed the host."
+                            },
+                            "citedYouQueryCount": {
+                                "type": "integer",
+                                "description": "Tracked queries with at least one AI answer that cited the host and featured the brand."
+                            },
+                            "responseCount": {
+                                "type": "integer",
+                                "description": "AI answers (each pass counted) and SERPs that listed the host."
+                            },
+                            "citationCount": {
+                                "type": "integer"
+                            },
+                            "avgPosition": {
+                                "anyOf": [
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "description": "1-based position of the host in each response's citations or results, averaged; LOWER is better."
+                            },
+                            "engines": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "inAi": {
+                                "type": "boolean"
+                            },
+                            "inSerp": {
+                                "type": "boolean"
+                            },
+                            "coCitedCompetitors": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "competitorId": {
+                                            "type": "string"
+                                        },
+                                        "competitorName": {
+                                            "type": "string"
+                                        },
+                                        "responseCount": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            },
+                            "growwer": {
+                                "anyOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "state": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "offer",
+                                                    "no_offer",
+                                                    "pending"
+                                                ],
+                                                "description": "offer: Growwer sells a link on this media; no_offer: it does not; pending: Growwer has not answered for this host yet."
+                                            },
+                                            "growwerDomain": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ]
+                                            },
+                                            "mediaIds": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "fromPrice": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "product": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "post",
+                                                                    "link_addition"
+                                                                ]
+                                                            },
+                                                            "linkType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "dofollow",
+                                                                    "nofollow",
+                                                                    "citation"
+                                                                ]
+                                                            },
+                                                            "amount": {
+                                                                "type": "integer",
+                                                                "description": "Minor units of currency, excluding VAT."
+                                                            },
+                                                            "currency": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "product",
+                                                            "linkType",
+                                                            "amount",
+                                                            "currency"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "The cheapest of Growwer's base prices, the price a buyer starts from; null unless state is offer."
+                                            },
+                                            "vatIncluded": {
+                                                "type": "boolean"
+                                            },
+                                            "advertisingLabellingPolicy": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ]
+                                            },
+                                            "checkedAt": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "When Growwer last answered for this host; null while pending."
+                                            },
+                                            "stale": {
+                                                "type": "boolean",
+                                                "description": "The stored answer is 48 hours old or more: the price may have changed."
+                                            },
+                                            "orders": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "type": {
+                                                            "type": "string"
+                                                        },
+                                                        "state": {
+                                                            "type": "string",
+                                                            "description": "Growwer's order state code."
+                                                        },
+                                                        "price": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "amount": {
+                                                                            "type": "integer",
+                                                                            "description": "Minor units of currency."
+                                                                        },
+                                                                        "currency": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "amount",
+                                                                        "currency"
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "projectId": {
+                                                            "type": "string",
+                                                            "description": "The Growwer project the order belongs to."
+                                                        },
+                                                        "mediaId": {
+                                                            "type": "string"
+                                                        },
+                                                        "deliveryUrl": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "publishedAt": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "createdAt": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "type",
+                                                        "state",
+                                                        "price",
+                                                        "projectId",
+                                                        "mediaId",
+                                                        "deliveryUrl",
+                                                        "publishedAt",
+                                                        "createdAt"
+                                                    ]
+                                                },
+                                                "description": "The organization's own Growwer orders on this media, of the Growwer project matched to the project's website; one means an order is already in progress. Empty unless growwerOrders.status is ok."
+                                            },
+                                            "requested": {
+                                                "type": "boolean",
+                                                "description": "The organization already asked Growwer for this media for the project, with request_growwer_media or from the app."
+                                            },
+                                            "requestedAt": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "null"
+                                                    }
+                                                ],
+                                                "description": "When it was first requested; null unless requested."
+                                            },
+                                            "canRequest": {
+                                                "type": "boolean",
+                                                "description": "Whether request_growwer_media can ask Growwer for it: the Growwer connection can send requests and, when the account was read, a Growwer project has the project's website, and the host is one a request takes (not an IPv6 address). False: the media is requested on Growwer's own site."
+                                            }
+                                        },
+                                        "required": [
+                                            "state",
+                                            "mediaIds",
+                                            "fromPrice",
+                                            "stale",
+                                            "orders",
+                                            "requested",
+                                            "requestedAt",
+                                            "canRequest"
+                                        ]
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "description": "Growwer's offer for a third-party host; null for the brand's and competitors' own sites."
+                            }
+                        },
+                        "required": [
+                            "host",
+                            "ownership",
+                            "gapQueryCount",
+                            "citingQueryCount",
+                            "responseCount"
+                        ],
+                        "additionalProperties": true
+                    },
+                    "gapQueries": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "trackedQueryId": {
+                                    "type": "string"
+                                },
+                                "queryText": {
+                                    "type": "string"
+                                },
+                                "country": {
+                                    "type": "string"
+                                },
+                                "engines": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "Engines of the gap responses; more than one when the query's engine changed in the period."
+                                },
+                                "gapResponseCount": {
+                                    "type": "integer"
+                                },
+                                "bestPosition": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "1-based; LOWER is better."
+                                },
+                                "lastSeenAt": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "gapQueriesTotal": {
+                        "type": "integer",
+                        "description": "Gap queries in all; gapQueries holds at most 100."
+                    },
+                    "citedUrls": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string"
+                                },
+                                "citationCount": {
+                                    "type": "integer"
+                                },
+                                "responseCount": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "citedUrlsTotal": {
+                        "type": "integer",
+                        "description": "Cited URLs in all; citedUrls holds at most 100."
+                    },
+                    "latestAnswer": {
+                        "anyOf": [
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "aiResponseId": {
+                                        "type": "string"
+                                    },
+                                    "trackedQueryId": {
+                                        "type": "string"
+                                    },
+                                    "queryText": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "engine": {
+                                        "type": "string"
+                                    },
+                                    "capturedAt": {
+                                        "type": "string"
+                                    },
+                                    "excerpt": {
+                                        "type": "string"
+                                    },
+                                    "featuredYou": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "The latest AI answer citing the host, a gap answer first; null when only SERPs list it."
+                    }
+                }
+            },
+            "annotations": {
+                "title": "Project sources and visibility opportunities",
                 "readOnlyHint": true,
                 "destructiveHint": false,
                 "idempotentHint": true,
@@ -7669,7 +9072,8 @@
                             "change_member_role",
                             "suspend_member",
                             "reactivate_member",
-                            "set_member_project_access"
+                            "set_member_project_access",
+                            "request_growwer_media"
                         ]
                     },
                     "arguments": {
@@ -8214,6 +9618,70 @@
                 "destructiveHint": false,
                 "idempotentHint": false,
                 "openWorldHint": false
+            }
+        },
+        {
+            "name": "request_growwer_media",
+            "title": "Request media from Growwer",
+            "description": "Ask Growwer, a sponsored-content marketplace, to find media on one source host for a project, through the Growwer account an owner connected in Mencoro's settings, for the Growwer project whose website is this project's (the first one, as get_growwer_offers picks it). Nothing is bought or paid; Growwer may tell the media's sellers a buyer is interested. Use it on a host get_project_sources lists with a growwer block whose canRequest is true. Idempotent per project and host: a host already requested answers with its first requestedAt and Growwer is not asked again. Refusals that mean the request must be made on Growwer's own site instead: growwer_not_connected, growwer_connection_revoked and growwer_connection_read_only (an owner must connect Growwer again, granting write access), growwer_project_not_matched (no Growwer project of the account has this project's website); these are checked before Growwer is asked, so the same requestId can be retried, after a new preview, once the connection is fixed. growwer_media_request_failed means Growwer refused or did not answer; nothing was stored and it can be tried again with a new preview and a new requestId. growwer_media_host_invalid: the host names no host, or is an IPv6 address. Requires a confirmationToken: call preview_operation with tool \"request_growwer_media\" and these arguments first, show the returned plan to the user, and call this tool only after the user explicitly agrees.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "organizationId": {
+                        "type": "string"
+                    },
+                    "projectId": {
+                        "type": "string"
+                    },
+                    "host": {
+                        "type": "string",
+                        "description": "The host as get_project_sources lists it; \"www.\" and case are ignored."
+                    },
+                    "confirmationToken": {
+                        "type": "string"
+                    },
+                    "requestId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null,
+                        "description": "Optional idempotency key, 8-255 printable characters. Reuse it only to retry this same call."
+                    }
+                },
+                "required": [
+                    "organizationId",
+                    "projectId",
+                    "host",
+                    "confirmationToken"
+                ]
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "host": {
+                        "type": "string"
+                    },
+                    "requested": {
+                        "type": "boolean"
+                    },
+                    "requestedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "host",
+                    "requested",
+                    "requestedAt"
+                ]
+            },
+            "annotations": {
+                "title": "Request media from Growwer",
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": true
             }
         },
         {
@@ -9690,7 +11158,7 @@
         {
             "name": "update_project",
             "title": "Update a project",
-            "description": "Rename a project, replace the website domains and brand names it is monitored for, or both. A rename alone removes nothing. brandProfile replaces both lists entirely: pass every domain and name the project should keep. A domain or brand name left out is removed, and later checks no longer match on it; results already recorded are not re-matched or deleted. Show the user the full new lists before calling. Safe to retry.",
+            "description": "Rename a project, replace the website domains and brand names it is monitored for, or both. A rename alone removes nothing. brandProfile replaces both lists entirely: pass every domain and name the project should keep. A domain or brand name left out is removed, and later checks no longer match on it; results already recorded are not re-matched or deleted. Show the user the full new lists before calling. A member restricted to selected projects may not change the website domains, only resubmit them unchanged. Safe to retry.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -10092,7 +11560,7 @@
         {
             "name": "set_up_project",
             "title": "Set up a project",
-            "description": "Start monitoring a brand from its website in a short conversation: gather what is missing, propose brand names and competitors together, create the project once the user confirms, then propose the first prompts to track.",
+            "description": "Start monitoring a brand from its website in a short conversation: gather what is missing, propose brand names and the competitors discover_competitors finds together, create the project with them once the user confirms, then propose the first prompts to track.",
             "arguments": [
                 {
                     "name": "website",
